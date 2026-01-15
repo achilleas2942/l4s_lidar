@@ -7,54 +7,70 @@ set -euo pipefail
 
 IMAGE_NAME="ghcr.io/achilleas2942/l4s-ros"
 IMAGE_TAG="pointcloud"
-ROLE="sender"       # set to "sender" for sending data and "receiver" for receiving data
 
-CONTAINER_NAME="l4s-ros-${IMAGE_TAG}"
+ROLE="sender"            # sender | receiver
+CONTAINER_NAME="l4s-ros-${IMAGE_TAG}-${ROLE}"
 
 # Runtime mode
-INTERACTIVE=1       # 1 = bash shell, 0 = run CMD only
-DETACH=0            # 1 = -d, 0 = foreground
+INTERACTIVE=1            # 1 = interactive shell, 0 = non-interactive
+DETACH=0                 # 1 = detached, 0 = foreground
 
 # Networking (L4S / ROS friendly)
 USE_HOST_NETWORK=1
 ENABLE_NET_ADMIN=1
 
-# Volumes
-MOUNT_WORKSPACE=0
-HOST_WORKSPACE="${HOME}/ros2_ws"
-CONTAINER_WORKSPACE="/workspace"
-
 # Environment
 PRINT_ENV=1
 ROS_DOMAIN_ID=0
+
+# Script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+HOST_SENDER_SCRIPTS="${REPO_ROOT}/sender_scripts"
+HOST_RECEIVER_SCRIPTS="${REPO_ROOT}/receiver_scripts"
+CONTAINER_SCRIPT_ROOT="/opt/pointcloud"
+
+# =====================================
+# Sanity checks
+# =====================================
+
+if ! command -v docker &> /dev/null; then
+  echo "❌ Docker not found"
+  exit 1
+fi
+
+if [[ "${ROLE}" != "sender" && "${ROLE}" != "receiver" ]]; then
+  echo "❌ ROLE must be 'sender' or 'receiver'"
+  exit 1
+fi
 
 # =====================================
 # Derived values
 # =====================================
 
 FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
-
 DOCKER_ARGS=()
 
 # -----------------
 # Mode flags
 # -----------------
-if [ "$INTERACTIVE" = "1" ]; then
+if [ "${INTERACTIVE}" = "1" ]; then
   DOCKER_ARGS+=("-it")
 fi
 
-if [ "$DETACH" = "1" ]; then
+if [ "${DETACH}" = "1" ]; then
   DOCKER_ARGS+=("-d")
 fi
 
 # -----------------
 # Networking
 # -----------------
-if [ "$USE_HOST_NETWORK" = "1" ]; then
+if [ "${USE_HOST_NETWORK}" = "1" ]; then
   DOCKER_ARGS+=("--network=host")
 fi
 
-if [ "$ENABLE_NET_ADMIN" = "1" ]; then
+if [ "${ENABLE_NET_ADMIN}" = "1" ]; then
   DOCKER_ARGS+=("--cap-add=NET_ADMIN")
 fi
 
@@ -67,13 +83,36 @@ DOCKER_ARGS+=(
 )
 
 # -----------------
-# Volumes
+# Role-based scripts
 # -----------------
-if [ "$MOUNT_WORKSPACE" = "1" ]; then
-  mkdir -p "${HOST_WORKSPACE}"
+if [ "${ROLE}" = "sender" ]; then
+  if [ ! -d "${HOST_SENDER_SCRIPTS}" ]; then
+    echo "❌ sender_scripts directory not found: ${HOST_SENDER_SCRIPTS}"
+    exit 1
+  fi
+
   DOCKER_ARGS+=(
-    "-v" "${HOST_WORKSPACE}:${CONTAINER_WORKSPACE}"
-    "-w" "${CONTAINER_WORKSPACE}"
+    "-v" "${HOST_SENDER_SCRIPTS}:${CONTAINER_SCRIPT_ROOT}/sender_scripts:ro"
+  )
+
+  ENTRYPOINT_CMD=(
+    "bash"
+    "${CONTAINER_SCRIPT_ROOT}/sender_scripts/sender.sh"
+  )
+
+else
+  if [ ! -d "${HOST_RECEIVER_SCRIPTS}" ]; then
+    echo "❌ receiver_scripts directory not found: ${HOST_RECEIVER_SCRIPTS}"
+    exit 1
+  fi
+
+  DOCKER_ARGS+=(
+    "-v" "${HOST_RECEIVER_SCRIPTS}:${CONTAINER_SCRIPT_ROOT}/receiver_scripts:ro"
+  )
+
+  ENTRYPOINT_CMD=(
+    "bash"
+    "${CONTAINER_SCRIPT_ROOT}/receiver_scripts/receiver.sh"
   )
 fi
 
@@ -94,9 +133,9 @@ echo "🚀 Running Docker Container"
 echo "-------------------------------------"
 echo "Image       : ${FULL_IMAGE_NAME}"
 echo "Container   : ${CONTAINER_NAME}"
+echo "Role        : ${ROLE}"
 echo "Host Net    : ${USE_HOST_NETWORK}"
 echo "NET_ADMIN   : ${ENABLE_NET_ADMIN}"
-echo "Workspace   : ${HOST_WORKSPACE}"
 echo "====================================="
 echo
 
@@ -104,7 +143,7 @@ docker run --rm \
   --name "${CONTAINER_NAME}" \
   "${DOCKER_ARGS[@]}" \
   "${FULL_IMAGE_NAME}" \
-  bash /"${ROLE}"_scripts/"${ROLE}".sh
+  "${ENTRYPOINT_CMD[@]}"
 
 echo
 echo "✅ Container exited"
