@@ -18,7 +18,7 @@ fi
 # ------------------------------
 # Print runtime info (optional)
 # ------------------------------
-if [ "${PRINT_ENV}" = "1" ]; then
+if [ "${PRINT_ENV:-0}" = "1" ]; then
     echo "ROS_DISTRO=${ROS_DISTRO}"
     echo "GStreamer version:"
     gst-launch-1.0 --version || true

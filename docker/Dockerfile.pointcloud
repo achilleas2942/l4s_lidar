@@ -1,0 +1,37 @@
+# ================================
+# Pointcloud image (on top of minimal)
+# ================================
+ARG ROS_DISTRO=rolling
+FROM ghcr.io/achilleas2942/l4s-ros:minimal
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ROS_DISTRO=${ROS_DISTRO}
+
+# ================================
+# ROS2 PointCloud runtime deps
+# ================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-sensor-msgs \
+    ros-${ROS_DISTRO}-std-msgs \
+    ros-${ROS_DISTRO}-rclcpp \
+    ros-${ROS_DISTRO}-rclpy \
+    python3-numpy \
+    python3-yaml \
+    && rm -rf /var/lib/apt/lists/*
+
+# ================================
+# Workspace layout (empty for now)
+# ================================
+RUN mkdir -p \
+    /opt/pointcloud_ws/src \
+    /opt/pointcloud_ws/install \
+    /opt/pointcloud_ws/log
+
+# ================================
+# Entrypoint
+# ================================
+COPY entrypoint_pointcloud.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bash"]

@@ -5,10 +5,11 @@ set -euo pipefail
 # Configuration (edit here)
 # =====================================
 
-IMAGE_NAME="ghcr.io/achilleas2942/l4s-lidar"
-IMAGE_TAG="minimal"
+IMAGE_NAME="ghcr.io/achilleas2942/l4s-ros"
+IMAGE_TAG="pointcloud"
+ROLE="sender"       # set to "sender" for sending data and "receiver" for receiving data
 
-CONTAINER_NAME="l4s_lidar_${IMAGE_TAG}"
+CONTAINER_NAME="l4s-ros-${IMAGE_TAG}"
 
 # Runtime mode
 INTERACTIVE=1       # 1 = bash shell, 0 = run CMD only
@@ -17,9 +18,6 @@ DETACH=0            # 1 = -d, 0 = foreground
 # Networking (L4S / ROS friendly)
 USE_HOST_NETWORK=1
 ENABLE_NET_ADMIN=1
-
-# X11 / GUI support
-ENABLE_GUI=0
 
 # Volumes
 MOUNT_WORKSPACE=0
@@ -80,17 +78,6 @@ if [ "$MOUNT_WORKSPACE" = "1" ]; then
 fi
 
 # -----------------
-# GUI / X11
-# -----------------
-if [ "$ENABLE_GUI" = "1" ]; then
-  xhost +local:docker >/dev/null 2>&1 || true
-  DOCKER_ARGS+=(
-    "-e" "DISPLAY=${DISPLAY}"
-    "-v" "/tmp/.X11-unix:/tmp/.X11-unix:rw"
-  )
-fi
-
-# -----------------
 # Cleanup existing container
 # -----------------
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -109,18 +96,15 @@ echo "Image       : ${FULL_IMAGE_NAME}"
 echo "Container   : ${CONTAINER_NAME}"
 echo "Host Net    : ${USE_HOST_NETWORK}"
 echo "NET_ADMIN   : ${ENABLE_NET_ADMIN}"
-echo "GUI         : ${ENABLE_GUI}"
 echo "Workspace   : ${HOST_WORKSPACE}"
 echo "====================================="
 echo
 
 docker run --rm \
   --name "${CONTAINER_NAME}" \
-  -e DISPLAY=$DISPLAY \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
   "${DOCKER_ARGS[@]}" \
   "${FULL_IMAGE_NAME}" \
-  bash
+  bash /"${ROLE}"_scripts/"${ROLE}".sh
 
 echo
 echo "✅ Container exited"

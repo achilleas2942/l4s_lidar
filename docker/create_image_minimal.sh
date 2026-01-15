@@ -5,16 +5,11 @@ set -euo pipefail
 # Configuration (edit here, not below)
 # =====================================
 
-IMAGE_NAME="ghcr.io/achilleas2942/l4s-lidar"
+IMAGE_NAME="ghcr.io/achilleas2942/l4s-ros"
 IMAGE_TAG="minimal"
 
 # ROS distro: rolling | jazzy | humble | iron
 ROS_DISTRO="rolling"
-
-# Feature toggles (0 = off, 1 = on)
-ENABLE_RUST=0
-ENABLE_GST_DEV=0
-ENABLE_GUI=0
 
 # Docker build context
 DOCKERFILE="Dockerfile.${IMAGE_TAG}"
@@ -28,9 +23,6 @@ FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 
 BUILD_ARGS=(
   "--build-arg" "ROS_DISTRO=${ROS_DISTRO}"
-  "--build-arg" "ENABLE_RUST=${ENABLE_RUST}"
-  "--build-arg" "ENABLE_GST_DEV=${ENABLE_GST_DEV}"
-  "--build-arg" "ENABLE_GUI=${ENABLE_GUI}"
 )
 
 # =====================================
@@ -47,9 +39,6 @@ echo "🐳 Building Docker Image"
 echo "-------------------------------------"
 echo "Image       : ${FULL_IMAGE_NAME}"
 echo "ROS Distro  : ${ROS_DISTRO}"
-echo "Rust        : ${ENABLE_RUST}"
-echo "GST Dev     : ${ENABLE_GST_DEV}"
-echo "GUI Support : ${ENABLE_GUI}"
 echo "====================================="
 echo
 
