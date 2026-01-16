@@ -1,60 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source "$(dirname "$0")/env.sh"
-: "${SCREAM_TARGET_DIR:?SCREAM_TARGET_DIR not set. Check env.sh}"
+SESSION="ros_scream_sender_session"
 
-#####################################
-# Defaults (can be overridden by args)
-#####################################
+# Source ROS and SCReAM environment
+ROS_SETUP="/opt/ros/${ROS_DISTRO}/setup.bash"
 
-RECEIVER_IP="${1:-192.168.1.150}" # Important to change to receiver address
-SCREAM_PORT="${2:-51000}"
+# -----------------------------
+# Start tmux session
+# -----------------------------
+tmux new-session -d -s "$SESSION"
 
-# SCReAM tuning (LiDAR-friendly)
-DELAY_TARGET="${DELAY_TARGET:-0.06}"     # seconds
-RATE_MIN="${RATE_MIN:-2000}"              # kbps
-RATE_INIT="${RATE_INIT:-5000}"            # kbps
-RATE_MAX="${RATE_MAX:-25000}"             # kbps
-RATE_SCALE="${RATE_SCALE:-1}"             
-MAX_TOTAL_RATE="${MAX_TOTAL_RATE:-60000}" # kbps
-PACING_HEADROOM="${PACING_HEADROOM:-1.5}"
+# -----------------------------
+# Pane 0: SCReAM sender
+# -----------------------------
+tmux send-keys -t "$SESSION:0.0" "bash /opt/pointcloud/sender_scripts/scream_sender.sh" C-m
 
-#####################################
-# Sanity check
-#####################################
-if [ ! -x "$SCREAM_TARGET_DIR/scream_sender" ]; then
-  echo "❌ scream_sender not found or not executable in $SCREAM_TARGET_DIR"
-  exit 1
-fi
+# -----------------------------
+# Pane 1: PointCloud Python sender
+# -----------------------------
+tmux split-window -h -t "$SESSION:0"
+tmux send-keys -t "$SESSION:0.1" "bash /opt/pointcloud/sender_scripts/pointcloud_sender.sh" C-m
 
-#####################################
-# Info
-#####################################
+# -----------------------------
+# Optional monitoring panes (can be used later)
+# -----------------------------
+tmux split-window -v -t "$SESSION:0.1"
+tmux send-keys -t "$SESSION:0.2" "echo 'Monitoring/logs pane 1'" C-m
 
-echo "========================================"
-echo " SCReAM LiDAR Sender"
-echo "----------------------------------------"
-echo " Receiver IP       : $RECEIVER_IP"
-echo " Receiver Port     : $SCREAM_PORT"
-echo " Delay Target      : $DELAY_TARGET s"
-echo " Rate (min/init/max): $RATE_MIN / $RATE_INIT / $RATE_MAX kbps"
-echo " Max Total Rate    : $MAX_TOTAL_RATE kbps"
-echo "========================================"
+tmux split-window -v -t "$SESSION:0.2"
+tmux send-keys -t "$SESSION:0.3" "echo 'Monitoring/logs pane 2'" C-m
 
-#####################################
-# Start SCReAM sender
-#####################################
+# -----------------------------
+# Layout
+# -----------------------------
+tmux select-layout -t "$SESSION" tiled
 
-exec "$SCREAM_TARGET_DIR/scream_sender" \
-  -ect 1 \
-  -delaytarget "$DELAY_TARGET" \
-  -priority 1.0 \
-  -ratemin "$RATE_MIN" \
-  -rateinit "$RATE_INIT" \
-  -ratemax "$RATE_MAX" \
-  -ratescale "$RATE_SCALE" \
-  -maxtotalrate "$MAX_TOTAL_RATE" \
-  -pacingheadroom "$PACING_HEADROOM" \
-  1 \
-  "$RECEIVER_IP" "$SCREAM_PORT"
+# -----------------------------
+# Attach
+# -----------------------------
+tmux attach-session -t "$SESSION"
