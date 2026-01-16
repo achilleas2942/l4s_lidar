@@ -2,13 +2,13 @@
 set -euo pipefail
 
 # =====================================
-# Configuration (edit here)
+# Configuration
 # =====================================
 
 IMAGE_NAME="ghcr.io/achilleas2942/l4s-ros"
 IMAGE_TAG="pointcloud"
 
-ROLE="sender"            # sender | receiver
+ROLE="${ROLE:-sender}"            # sender | receiver
 CONTAINER_NAME="l4s-ros-${IMAGE_TAG}-${ROLE}"
 
 # Runtime mode
@@ -127,7 +127,6 @@ fi
 # =====================================
 # Run
 # =====================================
-
 echo "====================================="
 echo "🚀 Running Docker Container"
 echo "-------------------------------------"
