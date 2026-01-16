@@ -9,7 +9,6 @@ ARG ROS_DISTRO=rolling
 FROM ros:${ROS_DISTRO}-ros-base AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # ---- Build dependencies only ----
@@ -32,12 +31,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---- Install Rust (for gstscream) ----
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
+# ================================
+# Fetch SCReAM
+# ================================
 WORKDIR /opt
-RUN git clone --depth=1 https://github.com/EricssonResearch/scream.git && \
-    cd scream/gstscream/scripts && \
-    ./build.sh --release
+RUN git clone --depth=1 https://github.com/EricssonResearch/scream.git
 
-RUN find /opt/scream/gstscream/target -name "*.so" -exec strip --strip-unneeded {} + || true
+# ================================
+# Build gstscream (Rust plugin)
+# ================================
+WORKDIR /opt/scream/gstscream/scripts
+RUN ./build.sh --release
+
+# Strip Rust shared objects
+RUN find /opt/scream/gstscream/target/debug -name "*.so" \
+    -exec strip --strip-unneeded {} + || true
+
+# ================================
+# Build SCReAM sender / receiver
+# ================================
+WORKDIR /opt/scream/multicam/sender/scream
+RUN mkdir -p build && cd build && cmake .. && make -j$(nproc)
+
+WORKDIR /opt/scream/multicam/receiver/scream
+RUN mkdir -p build && cd build && cmake .. && make -j$(nproc)
+
+# Strip binaries
+RUN strip /opt/scream/multicam/sender/scream/bin/scream_sender || true && \
+    strip /opt/scream/multicam/receiver/scream/bin/scream_receiver || true
 
 # ================================
 # Stage 2: Runtime (minimal)
@@ -51,31 +72,61 @@ ENV ROS_DISTRO=${ROS_DISTRO}
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gstreamer1.0-tools \
     gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
     iproute2 \
     iputils-ping \
-    libssl3 \
     libsrtp2-1 \
     libnice10 \
     libjsoncpp25 \
     libyaml-cpp0.8 \
-    psmisc \
     ca-certificates \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Copy only what is strictly needed ----
-COPY --from=builder /opt/scream/gstscream/scripts /opt/scream/gstscream/scripts
-COPY --from=builder /opt/scream/gstscream/target/debug  /opt/scream/gstscream/target/debug 
-COPY --from=builder /opt/scream/code/wrapper_lib /opt/scream/code/wrapper_lib
+# ================================
+# Runtime layout
+# ================================
+RUN mkdir -p \
+    /opt/scream/bin \
+    /opt/scream/gstscream \
+    /opt/scream/code
 
+# ================================
+# Copy gstscream
+# ================================
+COPY --from=builder /opt/scream/gstscream/scripts \
+    /opt/scream/gstscream/scripts
+
+COPY --from=builder /opt/scream/gstscream/target/debug \
+    /opt/scream/gstscream/target/debug
+
+COPY --from=builder /opt/scream/code/wrapper_lib \
+    /opt/scream/code/wrapper_lib
+
+# ================================
+# Copy SCReAM sender / receiver
+# ================================
+COPY --from=builder \
+    /opt/scream/multicam/sender/scream/bin/scream_sender \
+    /opt/scream/bin/scream_sender
+
+COPY --from=builder \
+    /opt/scream/multicam/receiver/scream/bin/scream_receiver \
+    /opt/scream/bin/scream_receiver
+
+RUN chmod +x /opt/scream/bin/scream_sender \
+             /opt/scream/bin/scream_receiver
+
+# ================================
+# Environment
+# ================================
 ENV GST_PLUGIN_PATH=/opt/scream/gstscream/target/debug:/usr/lib/x86_64-linux-gnu/gstreamer-1.0
 ENV LD_LIBRARY_PATH=/opt/scream/code/wrapper_lib
 
 # ================================
 # Entrypoint
 # ================================
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY entrypoint_minimal.sh /entrypoint_minimal.sh
+RUN chmod +x /entrypoint_minimal.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint_minimal.sh"]
 CMD ["bash"]
