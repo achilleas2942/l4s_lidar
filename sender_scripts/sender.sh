@@ -32,11 +32,7 @@ tmux split-window -v -t "$SESSION:0.2"
 tmux send-keys -t "$SESSION:0.3" "echo 'Monitoring/logs pane 2'" C-m
 
 # -----------------------------
-# Layout
+# Layout & attach
 # -----------------------------
 tmux select-layout -t "$SESSION" tiled
-
-# -----------------------------
-# Attach
-# -----------------------------
 tmux attach-session -t "$SESSION"
