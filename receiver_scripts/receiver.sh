@@ -1,57 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#####################################
-# Config
-#####################################
+SESSION="ros_scream_receiver_session"
 
-SESSION="pointcloud_rx"
+# Source ROS and SCReAM environment
+ROS_SETUP="/opt/ros/${ROS_DISTRO}/setup.bash"
 
-# Default ports (override via args)
-SCREAM_PORT="${1:-51000}"
-ROS_OUTPUT_TOPIC="${2:-/pointcloud_rx}"
-FRAME_ID="${3:-map}"
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-#####################################
-# Safety
-#####################################
-
-if tmux has-session -t "$SESSION" 2>/dev/null; then
-  echo "⚠️  tmux session '$SESSION' already exists."
-  echo "Attach with: tmux attach -t $SESSION"
-  exit 0
-fi
-
-#####################################
-# Start tmux
-#####################################
-
+# -----------------------------
+# Start tmux session
+# -----------------------------
 tmux new-session -d -s "$SESSION" -n scream
 
-#####################################
-# Pane 0 — SCReAM receiver
-#####################################
+# -----------------------------
+# Pane 0: SCReAM receiver
+# -----------------------------
+tmux send-keys -t "$SESSION:0.0"  "bash /opt/pointcloud/receiver_scripts/scream_receiver.sh" C-m
 
-tmux send-keys -t "$SESSION:scream" \
-  "cd $SCRIPT_DIR && ./scream_receiver.sh $SCREAM_PORT" C-m
+# -----------------------------
+# Pane 1: PointCloud Python receiver
+# -----------------------------
+tmux split-window -h -t "$SESSION:0"
+tmux send-keys -t "$SESSION:0.1" "bash opt/pointcloud/receiver_scripts/pointcloud_receiver.sh " C-m
 
-#####################################
-# Pane 1 — ROS2 pointcloud receiver
-#####################################
+# -----------------------------
+# Optional monitoring panes (can be used later)
+# -----------------------------
+tmux split-window -v -t "$SESSION:0.1"
+tmux send-keys -t "$SESSION:0.2" "echo 'Monitoring/logs pane 1'" C-m
 
-tmux split-window -h -t "$SESSION:scream"
+tmux split-window -v -t "$SESSION:0.2"
+tmux send-keys -t "$SESSION:0.3" "echo 'Monitoring/logs pane 2'" C-m
 
-tmux send-keys -t "$SESSION:scream.1" \
-  "cd $SCRIPT_DIR && ./pointcloud_receiver.sh \
-    --port $SCREAM_PORT \
-    --output-topic $ROS_OUTPUT_TOPIC \
-    --frame-id $FRAME_ID" C-m
-
-#####################################
+# -----------------------------
 # Layout & attach
-#####################################
+# -----------------------------
 
-tmux select-layout -t "$SESSION" even-horizontal
-tmux attach -t "$SESSION"
+tmux select-layout -t "$SESSION" tiled
+tmux attach-session -t "$SESSION"

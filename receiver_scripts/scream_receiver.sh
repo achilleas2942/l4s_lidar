@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source "$(dirname "$0")/env.sh"
-: "${SCREAM_TARGET_DIR:?SCREAM_TARGET_DIR not set. Check env.sh}"
+SCREAM_TARGET_DIR="/opt/scream/bin"
 
 #####################################
 # Defaults (override via args)
@@ -41,4 +40,4 @@ echo "========================================"
 #####################################
 
 exec "$SCREAM_TARGET_DIR/scream_receiver" \
-  "$LISTEN_PORT"
+  "$LISTEN_PORT" "$LISTEN_PORT" "$DATE"
