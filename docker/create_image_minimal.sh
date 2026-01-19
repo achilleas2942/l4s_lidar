@@ -47,7 +47,6 @@ echo
 # =====================================
 
 docker build \
-  --pull \
   --progress=plain \
   "${BUILD_ARGS[@]}" \
   -t "${FULL_IMAGE_NAME}" \
