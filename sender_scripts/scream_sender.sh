@@ -8,7 +8,7 @@ set -euo pipefail
 SCREAM_TARGET_DIR="/opt/scream/bin"
 
 # Defaults (can be overridden via env or arguments)
-RECEIVER_IP="${1:-192.168.1.150}"  # receiver IP address
+RECEIVER_IP="${1:-127.0.0.1}"  # receiver IP address
 SCREAM_PORT="${2:-51000}"          # receiver port
 
 DELAY_TARGET="${DELAY_TARGET:-0.06}"    # seconds

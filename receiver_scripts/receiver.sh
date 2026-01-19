@@ -1,44 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-source "$(dirname "$0")/env.sh"
-: "${SCREAM_TARGET_DIR:?SCREAM_TARGET_DIR not set. Check env.sh}"
+SESSION="ros_scream_receiver_session"
 
-#####################################
-# Defaults (override via args)
-#####################################
+# Source ROS and SCReAM environment
+ROS_SETUP="/opt/ros/${ROS_DISTRO}/setup.bash"
 
-LISTEN_PORT="${1:-51000}"
+# -----------------------------
+# Start tmux session
+# -----------------------------
+tmux new-session -d -s "$SESSION" -n scream
 
-#####################################
-# Timestamp (for logs)
-#####################################
+# -----------------------------
+# Pane 0: SCReAM receiver
+# -----------------------------
+tmux send-keys -t "$SESSION:0.0"  "bash /opt/pointcloud/receiver_scripts/scream_receiver.sh" C-m
 
-DATE="$(date +%y-%m-%d_%H%M%S)"
-export DATE
+# -----------------------------
+# Pane 1: PointCloud Python receiver
+# -----------------------------
+tmux split-window -h -t "$SESSION:0"
+tmux send-keys -t "$SESSION:0.1" "bash opt/pointcloud/receiver_scripts/pointcloud_receiver.sh " C-m
 
-#####################################
-# Sanity check
-#####################################
-if [ ! -x "$SCREAM_TARGET_DIR/scream_receiver" ]; then
-  echo "❌ scream_receiver not found or not executable in $SCREAM_TARGET_DIR"
-  exit 1
-fi
+# -----------------------------
+# Optional monitoring panes (can be used later)
+# -----------------------------
+tmux split-window -v -t "$SESSION:0.1"
+tmux send-keys -t "$SESSION:0.2" "echo 'Monitoring/logs pane 1'" C-m
 
-#####################################
-# Info
-#####################################
+tmux split-window -v -t "$SESSION:0.2"
+tmux send-keys -t "$SESSION:0.3" "echo 'Monitoring/logs pane 2'" C-m
 
-echo "========================================"
-echo " SCReAM LiDAR Receiver"
-echo "----------------------------------------"
-echo " Listening Port : $LISTEN_PORT"
-echo " Date           : $DATE"
-echo "========================================"
+# -----------------------------
+# Layout & attach
+# -----------------------------
 
-#####################################
-# Start SCReAM receiver
-#####################################
-
-exec "$SCREAM_TARGET_DIR/scream_receiver" \
-  "$LISTEN_PORT"
+tmux select-layout -t "$SESSION" tiled
+tmux attach-session -t "$SESSION"
