@@ -114,7 +114,7 @@ class PointCloudSender(Node):
             future.add_done_callback(self._on_compressed)
 
         except RuntimeError as e:
-            self.get_logger().warn(f"Executor error: {e}")
+            self.get_logger().warning(f"Executor error: {e}")
 
     def _on_compressed(self, future):
         try:
@@ -124,7 +124,7 @@ class PointCloudSender(Node):
                 f"Sent {len(payload)} bytes (enc {enc_ms:.1f} ms)"
             )
         except queue.Full:
-            self.get_logger().warn("Send queue full, dropping frame")
+            self.get_logger().warning("Send queue full, dropping frame")
         except Exception as e:
             self.get_logger().error(f"Compression failed: {e}")
 
