@@ -3,41 +3,40 @@ set -euo pipefail
 
 SCREAM_TARGET_DIR="/opt/scream/bin"
 
-#####################################
-# Defaults (override via args)
-#####################################
-
-LISTEN_PORT="${1:-51000}"
-
-#####################################
-# Timestamp (for logs)
-#####################################
+# ------------------------------
+# Defaults
+# ------------------------------
+SENDER_IP="${1:-127.0.0.1}"
+RTP_PORT="${2:-51000}"
+RTCP_PORT="${3:-51000}"
 
 DATE="$(date +%y-%m-%d_%H%M%S)"
-export DATE
 
-#####################################
+# ------------------------------
 # Sanity check
-#####################################
+# ------------------------------
 if [ ! -x "$SCREAM_TARGET_DIR/scream_receiver" ]; then
-  echo "❌ scream_receiver not found or not executable in $SCREAM_TARGET_DIR"
+  echo "❌ scream_receiver not found in $SCREAM_TARGET_DIR"
   exit 1
 fi
 
-#####################################
+# ------------------------------
 # Info
-#####################################
-
+# ------------------------------
 echo "========================================"
 echo " SCReAM LiDAR Receiver"
 echo "----------------------------------------"
-echo " Listening Port : $LISTEN_PORT"
-echo " Date           : $DATE"
+echo " Sender IP   : $SENDER_IP"
+echo " RTP Port    : $RTP_PORT"
+echo " RTCP Port   : $RTCP_PORT"
+echo " Date        : $DATE"
 echo "========================================"
 
-#####################################
-# Start SCReAM receiver
-#####################################
-
+# ------------------------------
+# Start receiver
+# ------------------------------
 exec "$SCREAM_TARGET_DIR/scream_receiver" \
-  "$LISTEN_PORT" "$LISTEN_PORT" "$DATE"
+  "$SENDER_IP" \
+  "$RTP_PORT" \
+  "$RTCP_PORT" \
+  "$DATE"
