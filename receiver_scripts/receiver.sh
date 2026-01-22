@@ -26,10 +26,10 @@ tmux send-keys -t "$SESSION:0.1" "bash opt/pointcloud/receiver_scripts/pointclou
 # Optional monitoring panes (can be used later)
 # -----------------------------
 tmux split-window -v -t "$SESSION:0.1"
-tmux send-keys -t "$SESSION:0.2" "echo 'Monitoring/logs pane 1'" C-m
+tmux send-keys -t "$SESSION:0.2" "source /opt/ros/rolling/setup.bash && ros2 topic echo /pointcloud_rx" C-m
 
 tmux split-window -v -t "$SESSION:0.2"
-tmux send-keys -t "$SESSION:0.3" "echo 'Monitoring/logs pane 2'" C-m
+tmux send-keys -t "$SESSION:0.3" "source /opt/ros/rolling/setup.bash" C-m
 
 # -----------------------------
 # Layout & attach
