@@ -31,12 +31,12 @@ class DracoDecompressor:
 
             points = np.asarray(decoded.points, dtype=np.float32)
 
-            # Sanity check
-            if points.ndim != 2 or points.shape[1] != 3:
+            if points.size % 3 != 0:
                 return np.empty((0, 3), dtype=np.float32), 0.0
 
-        except Exception as e:
-            # Let caller decide whether to log
+            points = points.reshape((-1, 3))
+
+        except Exception:
             return np.empty((0, 3), dtype=np.float32), 0.0
 
         elapsed_ms = (time.perf_counter() - t0) * 1e3

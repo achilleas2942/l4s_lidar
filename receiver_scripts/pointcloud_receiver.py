@@ -2,7 +2,6 @@
 import argparse
 import socket
 import struct
-import threading
 
 import numpy as np
 import rclpy
@@ -48,8 +47,12 @@ class PointCloudRtpReceiver(Node):
         self.frame_id = args.frame_id
         self.decompressor = DracoDecompressor()
 
+        # UDP socket for RTP
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
+        try:
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
+        except Exception:
+            pass
         self.sock.bind(('0.0.0.0', args.port))
         self.sock.setblocking(False)
 
@@ -64,11 +67,11 @@ class PointCloudRtpReceiver(Node):
         self.create_timer(0.001, self._poll_socket)
 
         self.get_logger().info(
-            f"Listening on UDP {args.port}, publishing to {args.output_topic}"
+            f"Listening for RTP+Draco on UDP {args.port}, publishing to {args.output_topic}"
         )
 
     @staticmethod
-    def _seq_inc(prev, cur):
+    def _seq_inc(prev, cur) -> bool:
         return ((prev + 1) & 0xFFFF) == cur
 
     def _poll_socket(self):
@@ -81,6 +84,7 @@ class PointCloudRtpReceiver(Node):
             if len(data) < RTP_HEADER_SIZE:
                 continue
 
+            # Parse RTP header
             b1, b2, seq, timestamp, _ = struct.unpack('!BBHII', data[:12])
             version = b1 >> 6
             if version != 2:
@@ -89,40 +93,62 @@ class PointCloudRtpReceiver(Node):
             marker = (b2 & 0x80) != 0
             payload = data[RTP_HEADER_SIZE:]
 
-            # New frame started unexpectedly → drop old one
-            if self.last_timestamp is not None and timestamp != self.last_timestamp:
+            # Timestamp jump without marker → flush best-effort
+            if (
+                self.last_timestamp is not None
+                and timestamp != self.last_timestamp
+                and self.current_payload
+                and not marker
+            ):
+                self.get_logger().warn(
+                    "Timestamp changed without marker; flushing partial frame"
+                )
+                self._try_decode_and_publish()
                 self._reset_frame()
 
             # Sequence gap detection
-            if self.last_seq is not None and not self._seq_inc(self.last_seq, seq):
-                self.frame_corrupt = True
+            if self.last_timestamp == timestamp and self.last_seq is not None:
+                if not self._seq_inc(self.last_seq, seq):
+                    self.frame_corrupt = True
 
+            # Accumulate payload
             self.current_payload.extend(payload)
             self.last_timestamp = timestamp
             self.last_seq = seq
 
+            # End of frame
             if marker:
-                self._finalize_frame()
+                self._try_decode_and_publish()
+                self._reset_frame()
 
-    def _finalize_frame(self):
-        if not self.current_payload or self.frame_corrupt:
-            if self.frame_corrupt:
-                self.get_logger().warn("Dropping corrupted frame")
-            self._reset_frame()
+    def _try_decode_and_publish(self):
+        if not self.current_payload:
             return
 
-        try:
-            points = self.decompressor.decompress(bytes(self.current_payload))
-            msg = create_pointcloud2(
-                points,
-                frame_id=self.frame_id,
-                stamp=self.get_clock().now().to_msg()
+        if self.frame_corrupt:
+            self.get_logger().warn(
+                "Dropping frame due to packet loss or reordering"
             )
-            self.publisher.publish(msg)
-        except Exception as e:
-            self.get_logger().error(f"Draco decode failed: {e}")
+            return
 
-        self._reset_frame()
+        points, decode_ms = self.decompressor.decompress(
+            bytes(self.current_payload)
+        )
+
+        if points.size == 0:
+            return
+
+        msg = create_pointcloud2(
+            points,
+            frame_id=self.frame_id,
+            stamp=self.get_clock().now().to_msg()
+        )
+        self.publisher.publish(msg)
+
+        self.get_logger().info(
+            f"Published PointCloud2 with {points.shape[0]} points "
+            f"(Draco decode {decode_ms:.2f} ms)"
+        )
 
     def _reset_frame(self):
         self.current_payload.clear()
@@ -133,7 +159,7 @@ class PointCloudRtpReceiver(Node):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', type=int, default=30000)
+    parser.add_argument('--port', type=int, default=30112)
     parser.add_argument('--output-topic', default='/pointcloud_rx')
     parser.add_argument('--frame-id', default='map')
     args = parser.parse_args()
