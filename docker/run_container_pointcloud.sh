@@ -16,7 +16,8 @@ INTERACTIVE=1            # 1 = interactive shell, 0 = non-interactive
 DETACH=0                 # 1 = detached, 0 = foreground
 
 # Networking (L4S / ROS friendly)
-USE_HOST_NETWORK=1
+USE_HOST_NETWORK=0       # 1 for different hosts
+USE_DOCKER_NETWORK=1     # 1 for same-host multi-container
 ENABLE_NET_ADMIN=1
 
 # Environment
@@ -34,7 +35,6 @@ CONTAINER_SCRIPT_ROOT="/opt/pointcloud"
 # =====================================
 # Sanity checks
 # =====================================
-
 if ! command -v docker &> /dev/null; then
   echo "❌ Docker not found"
   exit 1
@@ -48,7 +48,6 @@ fi
 # =====================================
 # Derived values
 # =====================================
-
 FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 DOCKER_ARGS=()
 
@@ -68,11 +67,28 @@ fi
 # -----------------
 if [ "${USE_HOST_NETWORK}" = "1" ]; then
   DOCKER_ARGS+=("--network=host")
+  echo "Using host networking (multi-host)"
+elif [ "${USE_DOCKER_NETWORK}" = "1" ]; then
+  DOCKER_NETWORK="scream_net"
+  docker network inspect "${DOCKER_NETWORK}" >/dev/null 2>&1 || \
+      docker network create "${DOCKER_NETWORK}"
+  DOCKER_ARGS+=("--network=${DOCKER_NETWORK}")
+  echo "Using Docker network: ${DOCKER_NETWORK}"
+
+  # Set container hostnames for SCReAM communication
+  if [ "${ROLE}" = "sender" ]; then
+    export RECEIVER_HOST="l4s-ros-pointcloud-receiver"
+    export RECEIVER_PORT=51000
+  else
+    export SENDER_HOST="l4s-ros-pointcloud-sender"
+    export SENDER_PORT=51000
+  fi
 fi
 
-if [ "${ENABLE_NET_ADMIN}" = "1" ]; then
-  DOCKER_ARGS+=("--cap-add=NET_ADMIN")
-fi
+# -----------------
+# Capabilities
+# -----------------
+[ "${ENABLE_NET_ADMIN}" = "1" ] && DOCKER_ARGS+=("--cap-add=NET_ADMIN")
 
 # -----------------
 # Environment
@@ -80,7 +96,30 @@ fi
 DOCKER_ARGS+=(
   "-e" "PRINT_ENV=${PRINT_ENV}"
   "-e" "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
+  "-e" "RECEIVER_HOST=${RECEIVER_HOST:-127.0.0.1}"
+  "-e" "RECEIVER_PORT=${RECEIVER_PORT:-51000}"
+  "-e" "SENDER_HOST=${SENDER_HOST:-127.0.0.1}"
+  "-e" "SENDER_PORT=${SENDER_PORT:-51000}"
 )
+
+# -----------------
+# Expose SCReAM ports
+# -----------------
+# SCReAM uses multiple UDP/TCP ports internally for RTP, RTCP, and codec control
+if [ "${ROLE}" = "sender" ]; then
+    # Map all typical sender ports
+    for port in {30000..30009} {50000..50007}; do
+        DOCKER_ARGS+=("-p" "${port}:${port}/udp")
+    done
+    for port in {30001..30009..2} {50001..50007..2}; do
+        DOCKER_ARGS+=("-p" "${port}:${port}/tcp")
+    done
+else
+    # Map all typical receiver ports
+    for port in {51000..51009} {30112..30119}; do
+        DOCKER_ARGS+=("-p" "${port}:${port}/udp")
+    done
+fi
 
 # -----------------
 # Role-based scripts
