@@ -7,19 +7,18 @@ set -euo pipefail
 
 SCREAM_TARGET_DIR="/opt/scream/bin"
 
-# Defaults (can be overridden via env or arguments)
-RECEIVER_IP="${1:-127.0.0.1}"  # receiver IP address
-SCREAM_PORT="${2:-51000}"          # receiver port
+# Use environment variables from run_container.sh
+RECEIVER_IP="$(getent hosts "${RECEIVER_HOST:-127.0.0.1}" | awk '{print $1}')"      # receiver container hostname/IP
+SCREAM_PORT="${RECEIVER_PORT:-51000}"          # receiver port
 
-DELAY_TARGET="${DELAY_TARGET:-0.06}"    # seconds
-RATE_MIN="${RATE_MIN:-2000}"            # kbps
-RATE_INIT="${RATE_INIT:-5000}"          # kbps
-RATE_MAX="${RATE_MAX:-25000}"           # kbps
-RATE_SCALE="${RATE_SCALE:-1}"           
-MAX_TOTAL_RATE="${MAX_TOTAL_RATE:-60000}" # kbps
-PACING_HEADROOM="${PACING_HEADROOM:-1.5}"
-
-SENDPIPELINE="${SENDPIPELINE:-1}"      # SCReAM send pipeline index
+DELAY_TARGET="${DELAY_TARGET:-0.06}"           # seconds
+RATE_MIN="${RATE_MIN:-2000}"                   # kbps
+RATE_INIT="${RATE_INIT:-5000}"                 # kbps
+RATE_MAX="${RATE_MAX:-25000}"                  # kbps
+RATE_SCALE="${RATE_SCALE:-1}"                  
+MAX_TOTAL_RATE="${MAX_TOTAL_RATE:-60000}"      # kbps
+PACING_HEADROOM="${PACING_HEADROOM:-1.5}"     
+SENDPIPELINE="${SENDPIPELINE:-1}"             # SCReAM send pipeline index
 
 # Optional environment hooks
 if [ -f "/etc/container.env" ]; then
