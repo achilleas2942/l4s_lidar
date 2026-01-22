@@ -3,12 +3,10 @@ set -euo pipefail
 
 SCREAM_TARGET_DIR="/opt/scream/bin"
 
-# ------------------------------
-# Defaults
-# ------------------------------
-SENDER_IP="${1:-127.0.0.1}"
-RTP_PORT="${2:-51000}"
-RTCP_PORT="${3:-51000}"
+# Use environment variables from run_container.sh
+SENDER_IP="$(getent hosts "${SENDER_HOST:-127.0.0.1}" | awk '{print $1}')"       # sender container hostname/IP
+RTP_PORT="${SENDER_PORT:-51000}"            # sender RTP port
+RTCP_PORT="${LOCAL_RTCP_PORT:-30011}"       # receiver local RTCP port
 
 DATE="$(date +%y-%m-%d_%H%M%S)"
 
@@ -26,17 +24,17 @@ fi
 echo "========================================"
 echo " SCReAM LiDAR Receiver"
 echo "----------------------------------------"
-echo " Sender IP   : $SENDER_IP"
-echo " RTP Port    : $RTP_PORT"
-echo " RTCP Port   : $RTCP_PORT"
-echo " Date        : $DATE"
+echo " Sender IP   : ${SENDER_IP}"
+echo " RTP Port    : ${RTP_PORT}"
+echo " RTCP Port   : ${RTCP_PORT}"
+echo " Date        : ${DATE}"
 echo "========================================"
 
 # ------------------------------
-# Start receiver
+# Start SCReAM receiver
 # ------------------------------
-exec "$SCREAM_TARGET_DIR/scream_receiver" \
-  "$SENDER_IP" \
-  "$RTP_PORT" \
-  "$RTCP_PORT" \
-  "$DATE"
+exec "${SCREAM_TARGET_DIR}/scream_receiver" \
+    "${SENDER_IP}" \
+    "${RTP_PORT}" \
+    "${RTCP_PORT}" \
+    "${DATE}"
