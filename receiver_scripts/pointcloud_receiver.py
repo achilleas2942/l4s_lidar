@@ -100,7 +100,7 @@ class PointCloudRtpReceiver(Node):
                 and self.current_payload
                 and not marker
             ):
-                self.get_logger().warn(
+                self.get_logger().warning(
                     "Timestamp changed without marker; flushing partial frame"
                 )
                 self._try_decode_and_publish()
@@ -126,7 +126,7 @@ class PointCloudRtpReceiver(Node):
             return
 
         if self.frame_corrupt:
-            self.get_logger().warn(
+            self.get_logger().warning(
                 "Dropping frame due to packet loss or reordering"
             )
             return
