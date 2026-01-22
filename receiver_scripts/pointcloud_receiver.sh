@@ -5,7 +5,7 @@ set -euo pipefail
 # Defaults (override via CLI args)
 #####################################
 
-PORT="${1:-30000}"
+PORT="${1:-30112}"
 OUTPUT_TOPIC="${2:-/pointcloud_rx}"
 FRAME_ID="${3:-map}"
 
