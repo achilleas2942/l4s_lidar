@@ -4,7 +4,7 @@ set -euo pipefail
 # ======================================
 # Configuration (can be overridden via env)
 # ======================================
-TOPIC=${TOPIC:-/lidar_points}
+TOPIC=${TOPIC:-/husky/ouster/points}
 DST_IP=${DST_IP:-127.0.0.1}
 DST_PORT=${DST_PORT:-30000}
 COMP_MODULE=${COMP_MODULE:-compressors.draco_compressor}
