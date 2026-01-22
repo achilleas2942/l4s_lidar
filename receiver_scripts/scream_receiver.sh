@@ -6,7 +6,7 @@ SCREAM_TARGET_DIR="/opt/scream/bin"
 # Use environment variables from run_container.sh
 SENDER_IP="$(getent hosts "${SENDER_HOST:-127.0.0.1}" | awk '{print $1}')"       # sender container hostname/IP
 RTP_PORT="${SENDER_PORT:-51000}"            # sender RTP port
-RTCP_PORT="${LOCAL_RTCP_PORT:-30011}"       # receiver local RTCP port
+RTCP_PORT="${LOCAL_RTCP_PORT:-51000}"       # receiver local RTCP port
 
 DATE="$(date +%y-%m-%d_%H%M%S)"
 
