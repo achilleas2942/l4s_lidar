@@ -183,5 +183,8 @@ docker run --rm \
   "${FULL_IMAGE_NAME}" \
   "${ENTRYPOINT_CMD[@]}"
 
+if docker network ls | grep -q scream_net | awk '{print $2}'; then 
+  docker network rm "${DOCKER_NETWORK}"
+fi
 echo
 echo "✅ Container exited"
