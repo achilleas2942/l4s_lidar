@@ -35,7 +35,7 @@ class RtpSender(threading.Thread):
             payload = self.payload_queue.get()
             if payload is None:
                 break
-            if len(payload) == 0:
+            if not payload:
                 continue
             self._send(payload)
 
@@ -50,15 +50,10 @@ class RtpSender(threading.Thread):
                 self.timestamp & 0xFFFFFFFF,
                 self.ssrc
             )
-            t0 = time.perf_counter()
             self.sock.sendto(header + chunk, self.dst_addr)
             self.sequence += 1
             offset += len(chunk)
-            # pacing: simple sleep to match target frame rate
-            send_budget = self.timestamp_step / self.rtp_clock
-            elapsed = time.perf_counter() - t0
-            if send_budget > elapsed:
-                time.sleep(send_budget - elapsed)
+
         self.timestamp = (self.timestamp + self.timestamp_step) & 0xFFFFFFFF
 
 
@@ -74,7 +69,6 @@ class PointCloudSender(Node):
         self.compress_pool = ThreadPoolExecutor(max_workers=args.workers)
         self.compressor = compressor_cls(args.quant_bits, args.comp_level)
 
-        self.compress_queue = queue.Queue(maxsize=args.queue_size)
         self.send_queue = queue.Queue(maxsize=args.queue_size)
 
         self.rtp_sender = RtpSender(
@@ -94,32 +88,41 @@ class PointCloudSender(Node):
             qos_profile=10
         )
 
-        self.log_counter = 0
-        self.log_interval = args.log_interval
-
         self.get_logger().info(
-            f"Streaming {args.topic} → {args.dst_ip}:{args.dst_port} "
-            f"with {args.workers} worker(s), compression ({args.quant_bits} bits, level {args.comp_level})"
+            f"Streaming {args.topic} → {args.dst_ip}:{args.dst_port} | "
+            f"Draco quant={args.quant_bits} level={args.comp_level}"
         )
 
     def _on_pointcloud(self, msg: PointCloud2):
-        if self.compress_pool is None:
-            return
-
         try:
             points = self._pc2_to_xyz(msg)
             if points.size == 0:
                 return
 
+            # -------- HARD NaN FILTER (CRITICAL FIX) --------
+            mask = np.isfinite(points).all(axis=1)
+            points = points[mask]
+
+            if points.shape[0] == 0:
+                self.get_logger().warn("All points invalid after NaN filtering, skipping frame")
+                return
+
+            self.get_logger().info(
+                f"Points stats: min={points.min():.2f}, max={points.max():.2f}, "
+                f"count={points.shape[0]}"
+            )
+
             future = self.compress_pool.submit(self.compressor.compress, points)
             future.add_done_callback(self._on_compressed)
 
-        except RuntimeError as e:
-            self.get_logger().warning(f"Executor error: {e}")
+        except Exception as e:
+            self.get_logger().error(f"PointCloud handling failed: {e}")
 
     def _on_compressed(self, future):
         try:
             payload, enc_ms = future.result()
+            if not payload:
+                return
             self.send_queue.put_nowait(payload)
             self.get_logger().info(
                 f"Sent {len(payload)} bytes (enc {enc_ms:.1f} ms)"
@@ -139,11 +142,13 @@ class PointCloudSender(Node):
 
         offsets = {f.name: f.offset for f in msg.fields}
         pts = np.empty((n, 3), dtype=np.float32)
+
         for i in range(n):
             base = i * step
             pts[i, 0] = struct.unpack_from("f", data, base + offsets["x"])[0]
             pts[i, 1] = struct.unpack_from("f", data, base + offsets["y"])[0]
             pts[i, 2] = struct.unpack_from("f", data, base + offsets["z"])[0]
+
         return pts
 
 
@@ -161,15 +166,12 @@ def main():
     parser.add_argument("--max_payload", type=int, default=1200)
     parser.add_argument("--rtp_clock", type=int, default=90000)
     parser.add_argument("--frame_rate", type=float, default=10.0)
-    parser.add_argument("--log_interval", type=int, default=10)
     args = parser.parse_args()
 
     rclpy.init()
     node = PointCloudSender(args)
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().info("Shutting down PointCloudSender…")
     finally:
         node.compress_pool.shutdown(wait=True)
         node.destroy_node()
