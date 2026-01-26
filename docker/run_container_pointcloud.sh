@@ -17,7 +17,7 @@ DETACH=0                                                    # 1 = detached, 0 = 
 
 # Networking (L4S / ROS friendly)
 ENABLE_NET_ADMIN=1
-USE_DOCKER_NETWORK=1                                        # 1 for same-host multi-container
+USE_DOCKER_NETWORK="${USE_DOCKER_NETWORK:-1}"               # 1 for same-host multi-container
 USE_HOST_NETWORK="${USE_HOST_NETWORK:-0}"                   # 1 for different hosts
 RECEIVER_HOST_IP="${RECEIVER_HOST_IP:-127.0.0.1}"           # [IMPORTANT!] Set the receiver host IP for sender
 SENDER_HOST_IP="${SENDER_HOST_IP:-127.0.0.1}"               # [IMPORTANT!] Set the sender host IP for receiver
