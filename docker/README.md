@@ -59,8 +59,8 @@ ROLE=sender USE_HOST_NETWORK=1 RECEIVER_HOST_IP=<RECEIVER_IP> ./run_container_po
 ```
 
 > **Important**
-> - `RECEIVER_HOST_IP` = IP of receiver machine
-> - `SENDER_HOST_IP` = IP of sender machine
+> - `RECEIVER_HOST_IP` = IP of receiver machine (always change include it by changing the <RECEIVER_IP>)
+> - `SENDER_HOST_IP` = IP of sender machine (always change include it by changing the <RECEIVER_IP>)
 
 ------------------------------------------------------------------------
 
