@@ -8,17 +8,21 @@ set -euo pipefail
 SCREAM_TARGET_DIR="/opt/scream/bin"
 
 # Use environment variables from run_container.sh
-RECEIVER_IP="$(getent hosts "${RECEIVER_HOST:-127.0.0.1}" | awk '{print $1}')"      # receiver container hostname/IP
-SCREAM_PORT="${RECEIVER_PORT:-51000}"          # receiver port
+if USE_HOST_NETWORK="${USE_HOST_NETWORK:-1}"; then
+  RECEIVER_IP="${RECEIVER_HOST:-127.0.0.1}"
+else
+  RECEIVER_IP="$(getent hosts "${RECEIVER_HOST:-127.0.0.1}" | awk '{print $1}')"  # receiver container hostname/IP
+fi
+SCREAM_PORT="${RECEIVER_PORT:-51000}"                                             # receiver port
 
-DELAY_TARGET="${DELAY_TARGET:-0.06}"           # seconds
-RATE_MIN="${RATE_MIN:-2000}"                   # kbps
-RATE_INIT="${RATE_INIT:-5000}"                 # kbps
-RATE_MAX="${RATE_MAX:-25000}"                  # kbps
-RATE_SCALE="${RATE_SCALE:-1}"                  
-MAX_TOTAL_RATE="${MAX_TOTAL_RATE:-60000}"      # kbps
-PACING_HEADROOM="${PACING_HEADROOM:-1.5}"     
-SENDPIPELINE="${SENDPIPELINE:-1}"             # SCReAM send pipeline index
+DELAY_TARGET="${DELAY_TARGET:-0.06}"                                              # seconds
+RATE_MIN="${RATE_MIN:-2000}"                                                      # kbps
+RATE_INIT="${RATE_INIT:-5000}"                                                    # kbps
+RATE_MAX="${RATE_MAX:-25000}"                                                     # kbps
+RATE_SCALE="${RATE_SCALE:-1}"                                                     # kbps
+MAX_TOTAL_RATE="${MAX_TOTAL_RATE:-60000}"                                         # kbps
+PACING_HEADROOM="${PACING_HEADROOM:-1.5}"                                         # pacing headroom
+SENDPIPELINE="${SENDPIPELINE:-1}"                                                 # SCReAM send pipeline index
 
 # Optional environment hooks
 if [ -f "/etc/container.env" ]; then
@@ -31,12 +35,11 @@ fi
 echo "========================================"
 echo " SCReAM LiDAR Sender"
 echo "----------------------------------------"
-echo " Receiver IP       : ${RECEIVER_IP}"
-echo " Receiver Port     : ${SCREAM_PORT}"
-echo " Delay Target      : ${DELAY_TARGET} s"
+echo " Receiver IP        : ${RECEIVER_IP}"
+echo " Receiver Port      : ${SCREAM_PORT}"
+echo " Delay Target       : ${DELAY_TARGET} s"
 echo " Rate (min/init/max): ${RATE_MIN} / ${RATE_INIT} / ${RATE_MAX} kbps"
-echo " Max Total Rate    : ${MAX_TOTAL_RATE} kbps"
-echo " Send Pipeline     : ${SENDPIPELINE}"
+echo " Max Total Rate     : ${MAX_TOTAL_RATE} kbps"
 echo "========================================"
 
 # ------------------------------
