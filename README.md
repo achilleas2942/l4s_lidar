@@ -122,7 +122,7 @@ From the `docker/` directory:
 
 ---
 
-## Running Containers
+## Running Containers (Mote details on how to run the containers [here](./docker/README.md))
 
 ### `run_container_pointcloud.sh`
 A **single entry point** to run sender or receiver containers.
