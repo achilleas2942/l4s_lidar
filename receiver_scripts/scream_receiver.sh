@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ------------------------------
+# Configuration
+# ------------------------------
+
 SCREAM_TARGET_DIR="/opt/scream/bin"
 
 # Use environment variables from run_container.sh
-SENDER_IP="$(getent hosts "${SENDER_HOST:-127.0.0.1}" | awk '{print $1}')"       # sender container hostname/IP
-RTP_PORT="${SENDER_PORT:-51000}"            # sender RTP port
-RTCP_PORT="${LOCAL_RTCP_PORT:-51000}"       # receiver local RTCP port
+if USE_HOST_NETWORK="${USE_HOST_NETWORK:-1}"; then
+  SENDER_IP="${SENDER_HOST:-127.0.0.1}"
+else
+  SENDER_IP="$(getent hosts "${SENDER_HOST:-127.0.0.1}" | awk '{print $1}')"  # sender container hostname/IP
+fi
+RTP_PORT="${SENDER_PORT:-51000}"                                              # sender RTP port
+RTCP_PORT="${LOCAL_RTCP_PORT:-51000}"                                         # receiver local RTCP port
 
 DATE="$(date +%y-%m-%d_%H%M%S)"
 
