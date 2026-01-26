@@ -3,9 +3,7 @@
 This setup streams a ROS2 `PointCloud2` topic:
 
 **ROS2 → Draco compression → RTP → SCReAM congestion control
-   ↓
-Network
-   ↓
+→ Network →
 Receiver → Decompression → ROS2**
 
 Everything runs inside Docker containers using
@@ -59,44 +57,40 @@ ROLE=sender USE_HOST_NETWORK=1 RECEIVER_HOST_IP=<RECEIVER_IP> ./run_container_po
 ```
 
 > **Important**
-> - `RECEIVER_HOST_IP` = IP of receiver machine (always change include it by changing the <RECEIVER_IP>)
-> - `SENDER_HOST_IP` = IP of sender machine (always change include it by changing the <RECEIVER_IP>)
+> - `RECEIVER_HOST_IP` = IP of receiver machine (always include it by changing the <RECEIVER_IP>)
+> - `SENDER_HOST_IP` = IP of sender machine (always include it by changing the <RECEIVER_IP>)
 
 ------------------------------------------------------------------------
 
 # Roles
 
-  ROLE       Function
-  ---------- --------------------------------------------------------
-  sender     Subscribes to ROS topic → compresses → SCReAM/RTP send
-  receiver   SCReAM/RTP receive → decompress → publishes ROS topic
+| ROLE     | Function                                                   |
+|----------|------------------------------------------------------------|
+| sender   | Subscribes to ROS topic → compresses → SCReAM/RTP send     |
+| receiver | SCReAM/RTP receive → decompress → publishes ROS topic      |
 
 ------------------------------------------------------------------------
 
 # Networking Modes
 
-  -----------------------------------------------------------------------
-  Mode           Variable                 When to use
-  -------------- ------------------------ -------------------------------
-  Docker network `USE_DOCKER_NETWORK=1`   Containers on same machine
-                 (default)                
 
-  Host network   `USE_HOST_NETWORK=1`     Containers on different
-                                          machines
-  -----------------------------------------------------------------------
+| Mode           |Variable                          | When to use                      |
+|----------------|----------------------------------|----------------------------------|
+| Docker network | `USE_DOCKER_NETWORK=1` (default) | Containers on same machine       |
+| Host network   | `USE_HOST_NETWORK=1`             | Containers on different machines |
 
 ------------------------------------------------------------------------
 
 # SCReAM Parameters (Congestion Control)
 
-  Variable            Default   Meaning
-  ------------------- --------- --------------------------
-  `DELAY_TARGET`      0.06      Target queuing delay (s)
-  `RATE_MIN`          2000      Minimum bitrate (kbps)
-  `RATE_INIT`         5000      Initial bitrate
-  `RATE_MAX`          25000     Max encoder rate
-  `MAX_TOTAL_RATE`    60000     Total allowed rate
-  `PACING_HEADROOM`   1.5       SCReAM pacing margin
+| Variable          | Default | Meaning                  |
+|-------------------|---------|--------------------------|
+| `DELAY_TARGET`    | 0.06    | Target queuing delay (s) |
+| `RATE_MIN`        | 2000    | Minimum bitrate (kbps)   |
+| `RATE_INIT`       | 5000    | Initial bitrate          |
+| `RATE_MAX`        | 25000   | Max encoder rate         |
+| `MAX_TOTAL_RATE`  | 60000   | Total allowed rate       |
+| `PACING_HEADROOM` | 1.5     | SCReAM pacing margin     |
 
 Example:
 
