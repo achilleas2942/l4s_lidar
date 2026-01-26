@@ -40,9 +40,9 @@ DELAY_TARGET="${DELAY_TARGET:-0.06}"                        # seconds
 RATE_MIN="${RATE_MIN:-2000}"                                # kbps
 RATE_INIT="${RATE_INIT:-5000}"                              # kbps
 RATE_MAX="${RATE_MAX:-25000}"                               # kbps
-RATE_SCALE="${RATE_SCALE:-1}"
+RATE_SCALE="${RATE_SCALE:-1}"                               # scale factor
 MAX_TOTAL_RATE="${MAX_TOTAL_RATE:-60000}"                   # kbps
-PACING_HEADROOM="${PACING_HEADROOM:-1.5}"
+PACING_HEADROOM="${PACING_HEADROOM:-1.5}"                   # pacing headroom
 SENDPIPELINE="${SENDPIPELINE:-1}"                           # SCReAM send pipeline index
 LOCAL_RTCP_PORT="${LOCAL_RTCP_PORT:-51000}"                 # receiver local RTCP port
 
@@ -59,9 +59,9 @@ COMP_CLASS="${COMP_CLASS:-DracoCompression}"                # sender compressor 
 QUANT_BITS="${QUANT_BITS:-12}"                              # sender quantization bits
 COMP_LEVEL="${COMP_LEVEL:-3}"                               # sender compression level
 WORKERS="${WORKERS:-1}"                                     # sender worker threads
-PORT="${PORT:-30112}"
-OUTPUT_TOPIC="${OUTPUT_TOPIC:-pointcloud_rx}"
-FRAME_ID="${FRAME_ID:-husky/os_sensor}"
+PORT="${PORT:-30112}"                                       # receiver listening port
+OUTPUT_TOPIC="${OUTPUT_TOPIC:-pointcloud_rx}"               # receiver output topic
+FRAME_ID="${FRAME_ID:-husky/os_sensor}"                     # receiver frame ID
 
 # =====================================
 # Sanity checks
