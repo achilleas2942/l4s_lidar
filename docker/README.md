@@ -102,15 +102,15 @@ RATE_MAX=40000 DELAY_TARGET=0.04 ROLE=sender ./run_container_pointcloud.sh
 
 # PointCloud Sender Parameters
 
-  Variable        Default
-  --------------- ------------------------------
-  `TOPIC`         `/husky/ouster/points`
-  `FRAME_RATE`    10
-  `MAX_PAYLOAD`   1200 bytes
-  `COMP_MODULE`   compressors.draco_compressor
-  `COMP_CLASS`    DracoCompression
-  `QUANT_BITS`    12
-  `COMP_LEVEL`    3
+| Variable      | Default                      |
+|---------------|------------------------------|
+| `TOPIC`       | `/husky/ouster/points`       |
+| `FRAME_RATE`  | 10                           |
+| `MAX_PAYLOAD` | 1200 bytes                   |
+| `COMP_MODULE` | compressors.draco_compressor |
+| `COMP_CLASS`  | DracoCompression             |
+| `QUANT_BITS`  | 12                           |
+| `COMP_LEVEL`  | 3                            |
 
 Example:
 
@@ -122,11 +122,11 @@ ROLE=sender TOPIC=/lidar_points FRAME_RATE=15 ./run_container_pointcloud.sh
 
 # PointCloud Receiver Parameters
 
-  Variable         Default
-  ---------------- -----------------
-  `PORT`           30112
-  `OUTPUT_TOPIC`   pointcloud_rx
-  `FRAME_ID`       husky/os_sensor
+| Variable       | Default         |
+|----------------|-----------------|
+| `PORT`         | 30112           |
+| `OUTPUT_TOPIC` | pointcloud_rx   |
+| `FRAME_ID`     | husky/os_sensor |
 
 Example:
 
@@ -165,24 +165,14 @@ to execute your pointcloud_sender/receiver code.
 
 ------------------------------------------------------------------------
 
-# Troubleshooting
+# Troubleshooting in Case of Error
 
-  ------------------------------------------------------------------------
-  Issue                     Cause                     Fix
-  ------------------------- ------------------------- --------------------
-  No packets received       Wrong IP                  Check
-                                                      `RECEIVER_HOST_IP` /
-                                                      `SENDER_HOST_IP`
-
-  Segfault in SCReAM        Port conflict             Ensure no other
-                                                      process uses ports
-
-  Empty clouds              NaNs in input             Sender filters NaNs
-                                                      before Draco
-
-  Rotated cloud             Frame mismatch            Apply TF or axis
-                                                      flip
-  ------------------------------------------------------------------------
+| Issue               | Cause          | Fix
+| --------------------|----------------|-------------------------------------------|
+| No packets received | Wrong IP       | Check `RECEIVER_HOST_IP`/`SENDER_HOST_IP` |
+| Segfault in SCReAM  | Port conflict  | Ensure no other process uses ports        |
+| Empty clouds        | NaNs in input  | Sender filters NaNs before Draco          |
+| Rotated cloud       | Frame mismatch | Apply TF or axis flip                     |
 
 ------------------------------------------------------------------------
 
