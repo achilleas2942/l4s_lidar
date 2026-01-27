@@ -35,12 +35,14 @@ LiDAR messages
 
 ```
 .
-├── deploy/
+├── deploy/ (TO BE DONE)
 |   ├── helm/
 │   |
 |   ├── kustomize/
 |   |
 |   └── manifests/
+|   |
+|   └── README.md
 |
 ├── docker/
 |   ├── build_scripts/
@@ -58,8 +60,10 @@ LiDAR messages
 │   |   ├── entrypoint_minimal.sh
 │   |   ├── entrypoint_pointcloud.sh
 |   |
-|   └── run_scripts/
-│       └── run_container_pointcloud.sh     # Unified container launcher
+|   ├── run_scripts/
+│   |   └── run_container_pointcloud.sh     # Unified container launcher
+|   |
+|   └── README.md
 │
 ├── src/
 |   ├── sender_scripts/
