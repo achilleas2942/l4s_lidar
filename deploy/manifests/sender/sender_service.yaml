@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: l4s-lidar-sender
+  namespace: l4s-lidar
+  labels:
+    app.kubernetes.io/name: l4s-lidar-sender
+spec:
+  selector:
+    app.kubernetes.io/name: l4s-lidar-sender
+  type: ClusterIP
+  ports:
+    - name: tcp-51000
+      port: 51000
+      targetPort: 51000
+      protocol: TCP
+
+    # UDP 30000–30009
+    - name: udp-30000
+      port: 30000
+      protocol: UDP
+    - name: udp-30001
+      port: 30001
+      protocol: UDP
+    - name: udp-30002
+      port: 30002
+      protocol: UDP
+    - name: udp-30003
+      port: 30003
+      protocol: UDP
+    - name: udp-30004
+      port: 30004
+      protocol: UDP
+    - name: udp-30005
+      port: 30005
+      protocol: UDP
+    - name: udp-30006
+      port: 30006
+      protocol: UDP
+    - name: udp-30007
+      port: 30007
+      protocol: UDP
+    - name: udp-30008
+      port: 30008
+      protocol: UDP
+    - name: udp-30009
+      port: 30009
+      protocol: UDP
+
+    # UDP 50000–50007
+    - name: udp-50000
+      port: 50000
+      protocol: UDP
+    - name: udp-50001
+      port: 50001
+      protocol: UDP
+    - name: udp-50002
+      port: 50002
+      protocol: UDP
+    - name: udp-50003
+      port: 50003
+      protocol: UDP
+    - name: udp-50004
+      port: 50004
+      protocol: UDP
+    - name: udp-50005
+      port: 50005
+      protocol: UDP
+    - name: udp-50006
+      port: 50006
+      protocol: UDP
+    - name: udp-50007
+      port: 50007
+      protocol: UDP
+
+    # TCP odd ports
+    - name: tcp-30001
+      port: 30001
+      protocol: TCP
+    - name: tcp-30003
+      port: 30003
+      protocol: TCP
+    - name: tcp-30005
+      port: 30005
+      protocol: TCP
+    - name: tcp-30007
+      port: 30007
+      protocol: TCP
+    - name: tcp-30009
+      port: 30009
+      protocol: TCP
+
+    - name: tcp-50001
+      port: 50001
+      protocol: TCP
+    - name: tcp-50003
+      port: 50003
+      protocol: TCP
+    - name: tcp-50005
+      port: 50005
+      protocol: TCP
+    - name: tcp-50007
+      port: 50007
+      protocol: TCP

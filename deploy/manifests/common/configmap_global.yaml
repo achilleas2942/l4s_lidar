@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l4s-lidar-global-config
+  namespace: l4s-lidar
+data:
+  # Add key-value pairs common to both sender and receiver
+  LOG_LEVEL: "info"
+  MODE: "production"

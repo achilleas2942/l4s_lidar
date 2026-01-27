@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: l4s-lidar-receiver
+  namespace: l4s-lidar
+  labels:
+    app.kubernetes.io/name: l4s-lidar-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: l4s-lidar-receiver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: l4s-lidar-receiver
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ki20erk3shusky2
+      serviceAccountName: l4s-lidar-receiver
+      imagePullSecrets:
+        - name: gitlab-pull-secret
+      containers:
+        - name: l4s-lidar-receiver
+          image: ghcr.io/achilleas2942/l4s-ros:pointcloud
+          imagePullPolicy: IfNotPresent
+          tty: true
+          stdin: true
+          env:
+            # From global shared config
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: l4s-global-config
+                  key: LOG_LEVEL
+            # Receiver-specific config
+            - name: RECEIVER_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: l4s-lidar-receiver-config
+                  key: RECEIVER_MODE
+          ports:
+            - containerPort: 51000
+              protocol: TCP
+            # UDP ports 30112–30119
+            - containerPort: 30112
+              protocol: UDP
+            - containerPort: 30113
+              protocol: UDP
+            - containerPort: 30114
+              protocol: UDP
+            - containerPort: 30115
+              protocol: UDP
+            - containerPort: 30116
+              protocol: UDP
+            - containerPort: 30117
+              protocol: UDP
+            - containerPort: 30118
+              protocol: UDP
+            - containerPort: 30119
+              protocol: UDP
+            # UDP ports 51000–51009
+            - containerPort: 51000
+              protocol: UDP
+            - containerPort: 51001
+              protocol: UDP
+            - containerPort: 51002
+              protocol: UDP
+            - containerPort: 51003
+              protocol: UDP
+            - containerPort: 51004
+              protocol: UDP
+            - containerPort: 51005
+              protocol: UDP
+            - containerPort: 51006
+              protocol: UDP
+            - containerPort: 51007
+              protocol: UDP
+            - containerPort: 51008
+              protocol: UDP
+            - containerPort: 51009
+              protocol: UDP
+          volumeMounts:
+            - name: receiver-scripts
+              mountPath: /opt/pointcloud/receiver_scripts
+              readOnly: true
+      volumes:
+        - name: receiver-scripts
+          hostPath:
+            path: /src/receiver_scripts
+            type: Directory

@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: l4s-lidar-common-readonly
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "configmaps"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: l4s-lidar-common-readonly-binding
+subjects:
+  # Add the ServiceAccounts from sender + receiver
+  - kind: ServiceAccount
+    name: l4s-lidar-sender
+    namespace: l4s-lidar
+  - kind: ServiceAccount
+    name: l4s-lidar-receiver
+    namespace: l4s-lidar
+roleRef:
+  kind: ClusterRole
+  name: l4s-lidar-common-readonly
+  apiGroup: rbac.authorization.k8s.io

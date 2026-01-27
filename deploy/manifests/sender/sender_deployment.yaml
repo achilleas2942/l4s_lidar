@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: l4s-lidar-sender
+  namespace: l4s-lidar
+  labels:
+    app.kubernetes.io/name: l4s-lidar-sender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: l4s-lidar-sender
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: l4s-lidar-sender
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: cpr-a200-0779
+      serviceAccountName: l4s-lidar-sender
+      imagePullSecrets:
+        - name: gitlab-pull-secret
+      containers:
+        - name: l4s-lidar-sender
+          image: ghcr.io/achilleas2942/l4s-ros:pointcloud
+          imagePullPolicy: IfNotPresent
+          tty: true
+          stdin: true
+          env:
+            # From global shared config
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: l4s-global-config
+                  key: LOG_LEVEL
+            # Sender-specific config
+            - name: SENDER_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: l4s-lidar-sender-config
+                  key: SENDER_MODE
+          ports:
+            - containerPort: 51000
+              protocol: TCP
+            # UDP ports 30000–30009
+            - containerPort: 30000
+              protocol: UDP
+            - containerPort: 30001
+              protocol: UDP
+            - containerPort: 30002
+              protocol: UDP
+            - containerPort: 30003
+              protocol: UDP
+            - containerPort: 30004
+              protocol: UDP
+            - containerPort: 30005
+              protocol: UDP
+            - containerPort: 30006
+              protocol: UDP
+            - containerPort: 30007
+              protocol: UDP
+            - containerPort: 30008
+              protocol: UDP
+            - containerPort: 30009
+              protocol: UDP
+            # UDP ports 50000–50007
+            - containerPort: 50000
+              protocol: UDP
+            - containerPort: 50001
+              protocol: UDP
+            - containerPort: 50002
+              protocol: UDP
+            - containerPort: 50003
+              protocol: UDP
+            - containerPort: 50004
+              protocol: UDP
+            - containerPort: 50005
+              protocol: UDP
+            - containerPort: 50006
+              protocol: UDP
+            - containerPort: 50007
+              protocol: UDP
+            # TCP stepping ports 30001–30009 (odd numbers)
+            - containerPort: 30001
+              protocol: TCP
+            - containerPort: 30003
+              protocol: TCP
+            - containerPort: 30005
+              protocol: TCP
+            - containerPort: 30007
+              protocol: TCP
+            - containerPort: 30009
+              protocol: TCP
+            # TCP stepping ports 50001–50007 (odd numbers)
+            - containerPort: 50001
+              protocol: TCP
+            - containerPort: 50003
+              protocol: TCP
+            - containerPort: 50005
+              protocol: TCP
+            - containerPort: 50007
+              protocol: TCP
+          volumeMounts:
+            - name: sender-scripts
+              mountPath: /opt/pointcloud/sender_scripts
+              readOnly: true
+      volumes:
+        - name: sender-scripts
+          hostPath:
+            path: /src/sender_scripts
+            type: Directory
