@@ -36,45 +36,45 @@ LiDAR messages
 ```
 .
 ├── deploy/ (TO BE DONE)
-|   ├── helm/
-│   |
-|   ├── kustomize/
-|   |
-|   └── manifests/
-|   |
-|   └── README.md
-|
+│   ├── helm/
+│   │
+│   ├── kustomize/
+│   │
+│   ├── manifests/
+│   │
+│   └── README.md
+│
 ├── docker/
-|   ├── build_scripts/
-│   |   ├── create_image_stable.sh          # Builder for the stable image
-│   |   ├── create_image_minimal.sh         # Builder for the minimal image
-│   |   └── create_image_pointcloud.sh      # Builder for the pointcloud image
-|   |
-|   ├── dockerfiles/
-│   |   ├── Dockerfile.stable               # Full SCReAM + GStreamer runtime
-│   |   ├── Dockerfile.minimal              # Minimal SCReAM runtime (base image)
-│   |   └── Dockerfile.pointcloud           # PointCloud image on top of minimal
-|   |
-|   ├── entrypoints/
-│   |   ├── entrypoint_stable.sh
-│   |   ├── entrypoint_minimal.sh
-│   |   ├── entrypoint_pointcloud.sh
-|   |
-|   ├── run_scripts/
-│   |   └── run_container_pointcloud.sh     # Unified container launcher
-|   |
-|   └── README.md
+│   ├── build_scripts/
+│   │   ├── create_image_stable.sh          # Builder for the stable image
+│   │   ├── create_image_minimal.sh         # Builder for the minimal image
+│   │   └── create_image_pointcloud.sh      # Builder for the pointcloud image
+│   │
+│   ├── dockerfiles/
+│   │   ├── Dockerfile.stable               # Full SCReAM + GStreamer runtime
+│   │   ├── Dockerfile.minimal              # Minimal SCReAM runtime (base image)
+│   │   └── Dockerfile.pointcloud           # PointCloud image on top of minimal
+│   │
+│   ├── entrypoints/
+│   │   ├── entrypoint_stable.sh
+│   │   ├── entrypoint_minimal.sh
+│   │   └── entrypoint_pointcloud.sh
+│   │
+│   ├── run_scripts/
+│   │   └── run_container_pointcloud.sh     # Unified container launcher
+│   │
+│   └── README.md
 │
 ├── src/
-|   ├── sender_scripts/
-│   |   ├── sender.sh                       # tmux‑based sender launcher
-│   |   ├── scream_sender.sh                # Native SCReAM sender wrapper
-│   |   ├── pointcloud_sender.py            # ROS2 → Draco → RTP
-│   |   ├── pointcloud_sender.sh            # Runs pointcloud_sender.py
-│   |   └── compressors/
-│   |       └── draco_compressor.py
-│   |
-|   └── receiver_scripts/
+│   ├── sender_scripts/
+│   │   ├── sender.sh                       # tmux‑based sender launcher
+│   │   ├── scream_sender.sh                # Native SCReAM sender wrapper
+│   │   ├── pointcloud_sender.py            # ROS2 → Draco → RTP
+│   │   ├── pointcloud_sender.sh            # Runs pointcloud_sender.py
+│   │   └── compressors/
+│   │       └── draco_compressor.py
+│   │
+│   └── receiver_scripts/
 │       ├── receiver.sh                     # tmux‑based receiver launcher
 │       ├── scream_receiver.sh              # Native SCReAM receiver wrapper
 │       ├── pointcloud_receiver.py          # RTP → Draco → ROS2
