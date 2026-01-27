@@ -28,13 +28,13 @@ The same image runs both roles:
 Terminal 1 --- Receiver:
 
 ``` bash
-ROLE=receiver ./run_container_pointcloud.sh
+ROLE=receiver ./run_scripts/run_container_pointcloud.sh
 ```
 
 Terminal 2 --- Sender:
 
 ``` bash
-ROLE=sender ./run_container_pointcloud.sh
+ROLE=sender ./run_scripts/run_container_pointcloud.sh
 ```
 
 Docker creates an internal network (`scream_net`) and containers talk
@@ -47,13 +47,13 @@ via hostname.
 ### On RECEIVER machine
 
 ``` bash
-ROLE=receiver USE_HOST_NETWORK=1 SENDER_HOST_IP=<SENDER_IP> ./run_container_pointcloud.sh
+ROLE=receiver USE_HOST_NETWORK=1 SENDER_HOST_IP=<SENDER_IP> ./run_scripts/run_container_pointcloud.sh
 ```
 
 ### On SENDER machine
 
 ``` bash
-ROLE=sender USE_HOST_NETWORK=1 RECEIVER_HOST_IP=<RECEIVER_IP> ./run_container_pointcloud.sh
+ROLE=sender USE_HOST_NETWORK=1 RECEIVER_HOST_IP=<RECEIVER_IP> ./run_scripts/run_container_pointcloud.sh
 ```
 
 > **Important**
@@ -95,7 +95,7 @@ ROLE=sender USE_HOST_NETWORK=1 RECEIVER_HOST_IP=<RECEIVER_IP> ./run_container_po
 Example:
 
 ``` bash
-RATE_MAX=40000 DELAY_TARGET=0.04 ROLE=sender ./run_container_pointcloud.sh
+RATE_MAX=40000 DELAY_TARGET=0.04 ROLE=sender ./run_scripts/run_container_pointcloud.sh
 ```
 
 ------------------------------------------------------------------------
@@ -115,7 +115,7 @@ RATE_MAX=40000 DELAY_TARGET=0.04 ROLE=sender ./run_container_pointcloud.sh
 Example:
 
 ``` bash
-ROLE=sender TOPIC=/lidar_points FRAME_RATE=15 ./run_container_pointcloud.sh
+ROLE=sender TOPIC=/lidar_points FRAME_RATE=15 ./run_scripts/run_container_pointcloud.sh
 ```
 
 ------------------------------------------------------------------------
@@ -131,7 +131,7 @@ ROLE=sender TOPIC=/lidar_points FRAME_RATE=15 ./run_container_pointcloud.sh
 Example:
 
 ``` bash
-ROLE=receiver OUTPUT_TOPIC=/cloud_rx FRAME_ID=lidar ./run_container_pointcloud.sh
+ROLE=receiver OUTPUT_TOPIC=/cloud_rx FRAME_ID=lidar ./run_scripts/run_container_pointcloud.sh
 ```
 
 ------------------------------------------------------------------------

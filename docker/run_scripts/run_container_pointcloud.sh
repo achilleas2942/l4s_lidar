@@ -29,10 +29,10 @@ ROS_DOMAIN_ID=0
 
 # Script location
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-HOST_SENDER_SCRIPTS="${REPO_ROOT}/sender_scripts"
-HOST_RECEIVER_SCRIPTS="${REPO_ROOT}/receiver_scripts"
+HOST_SENDER_SCRIPTS="${REPO_ROOT}/scripts/sender_scripts"
+HOST_RECEIVER_SCRIPTS="${REPO_ROOT}/scripts/receiver_scripts"
 CONTAINER_SCRIPT_ROOT="/opt/pointcloud"
 
 # SCREaM sender / receiver parameters

@@ -2,18 +2,20 @@
 set -euo pipefail
 
 # =====================================
-# Configuration (edit here)
+# Configuration (edit here, not below)
 # =====================================
 
 IMAGE_NAME="ghcr.io/achilleas2942/l4s-ros"
-IMAGE_TAG="pointcloud"
+IMAGE_TAG="stable"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # ROS distro: rolling | jazzy | humble | iron
 ROS_DISTRO="rolling"
 
-# Dockerfile
-DOCKERFILE="Dockerfile.${IMAGE_TAG}"
-BUILD_CONTEXT="."
+# Docker build context
+DOCKERFILE="${REPO_ROOT}/dockerfiles/Dockerfile.${IMAGE_TAG}"
+BUILD_CONTEXT="${REPO_ROOT}"
 
 # =====================================
 # Derived values

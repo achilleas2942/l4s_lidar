@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir --break-system-packages DracoPy
 # ================================
 # Entrypoint
 # ================================
-COPY entrypoint_pointcloud.sh /entrypoint_pointcloud.sh
+COPY entrypoints/entrypoint_pointcloud.sh /entrypoint_pointcloud.sh
 RUN chmod +x /entrypoint_pointcloud.sh
 
 ENTRYPOINT ["/entrypoint_pointcloud.sh"]

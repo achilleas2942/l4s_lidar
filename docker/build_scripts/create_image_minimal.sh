@@ -6,14 +6,16 @@ set -euo pipefail
 # =====================================
 
 IMAGE_NAME="ghcr.io/achilleas2942/l4s-ros"
-IMAGE_TAG="stable"
+IMAGE_TAG="minimal"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../dockerfiles" && pwd)"
 
 # ROS distro: rolling | jazzy | humble | iron
 ROS_DISTRO="rolling"
 
 # Docker build context
-DOCKERFILE="Dockerfile.${IMAGE_TAG}"
-BUILD_CONTEXT="."
+DOCKERFILE="${REPO_ROOT}/dockerfiles/Dockerfile.${IMAGE_TAG}"
+BUILD_CONTEXT="${REPO_ROOT}"
 
 # =====================================
 # Derived values

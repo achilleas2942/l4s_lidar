@@ -146,7 +146,7 @@ ENV LD_LIBRARY_PATH=/opt/scream/code/wrapper_lib
 # ================================
 # Entrypoint
 # ================================
-COPY entrypoint_stable.sh /entrypoint_stable.sh
+COPY entrypoints/entrypoint_stable.sh /entrypoint_stable.sh
 RUN chmod +x /entrypoint_stable.sh
 
 ENTRYPOINT ["/entrypoint_stable.sh"]

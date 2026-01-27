@@ -35,34 +35,49 @@ LiDAR messages
 
 ```
 .
+├── deploy/
+|   ├── helm/
+│   |
+|   ├── kustomize/
+|   |
+|   └── manifests/
+|
 ├── docker/
-│   ├── Dockerfile.stable               # Full SCReAM + GStreamer runtime
-│   ├── Dockerfile.minimal              # Minimal SCReAM runtime (base image)
-│   ├── Dockerfile.pointcloud           # PointCloud image on top of minimal
-│   ├── create_image_stable.sh          # Builder for the stable image
-│   ├── create_image_minimal.sh         # Builder for the minimal image
-│   ├── create_image_pointcloud.sh      # Builder for the pointcloud image
-│   ├── entrypoint_stable.sh
-│   ├── entrypoint_minimal.sh
-│   ├── entrypoint_pointcloud.sh
-│   └── run_container_pointcloud.sh     # Unified container launcher
+|   ├── build_scripts
+│   |   ├── create_image_stable.sh          # Builder for the stable image
+│   |   ├── create_image_minimal.sh         # Builder for the minimal image
+│   |   └── create_image_pointcloud.sh      # Builder for the pointcloud image
+|   |
+|   ├── dockerfiles/
+│   |   ├── Dockerfile.stable               # Full SCReAM + GStreamer runtime
+│   |   ├── Dockerfile.minimal              # Minimal SCReAM runtime (base image)
+│   |   └── Dockerfile.pointcloud           # PointCloud image on top of minimal
+|   |
+|   ├── entrypoints/
+│   |   ├── entrypoint_stable.sh
+│   |   ├── entrypoint_minimal.sh
+│   |   ├── entrypoint_pointcloud.sh
+|   |
+|   └── run_scripts/
+│       └── run_container_pointcloud.sh     # Unified container launcher
 │
-├── sender_scripts/
-│   ├── sender.sh                       # tmux‑based sender launcher
-│   ├── scream_sender.sh                # Native SCReAM sender wrapper
-│   ├── pointcloud_sender.py            # ROS2 → Draco → RTP
-│   ├── pointcloud_sender.sh            # Runs pointcloud_sender.py
-│   └── compressors/
-│       └── draco_compressor.py
-│
-├── receiver_scripts/
-│   ├── receiver.sh                     # tmux‑based receiver launcher
-│   ├── scream_receiver.sh              # Native SCReAM receiver wrapper
-│   ├── pointcloud_receiver.py          # RTP → Draco → ROS2
-│   ├── pointcloud_receiver.sh          # Runs pointcloud_receiver.py
-│   └── decompressors/
-│       └── draco_decompressor.py
-│
+├── src/
+|   ├── sender_scripts/
+│   |   ├── sender.sh                       # tmux‑based sender launcher
+│   |   ├── scream_sender.sh                # Native SCReAM sender wrapper
+│   |   ├── pointcloud_sender.py            # ROS2 → Draco → RTP
+│   |   ├── pointcloud_sender.sh            # Runs pointcloud_sender.py
+│   |   └── compressors/
+│   |       └── draco_compressor.py
+│   |
+|   └── receiver_scripts/
+│       ├── receiver.sh                     # tmux‑based receiver launcher
+│       ├── scream_receiver.sh              # Native SCReAM receiver wrapper
+│       ├── pointcloud_receiver.py          # RTP → Draco → ROS2
+│       ├── pointcloud_receiver.sh          # Runs pointcloud_receiver.py
+│       └── decompressors/
+│           └── draco_decompressor.py
+│   
 └── README.md
 ```
 
@@ -115,9 +130,9 @@ This image is the **base** for pointcloud streaming.
 From the `docker/` directory:
 
 ```bash
-./create_image_stable.sh
-./create_image_minimal.sh
-./create_image_pointcloud.sh
+./build_scripts/create_image_stable.sh
+./build_scripts/create_image_minimal.sh
+./build_scripts/create_image_pointcloud.sh
 ```
 
 ---
@@ -129,19 +144,18 @@ A **single entry point** to run sender or receiver containers.
 
 Key features:
 - Role‑based execution (`sender` or `receiver`)
-- Host networking (recommended for L4S)
 - Volume‑mounted scripts (no rebuild needed for logic changes)
 
-Run the following bash script on the sender:
+Run the following bash script on the sender from the `docker/` directory:
 
 ```bash
-ROLE="sender" ./run_container_pointcloud.sh
+ROLE="sender" ./run_scripts/run_container_pointcloud.sh
 ```
 
-Run the following bash script on the receiver:
+Run the following bash script on the receiver  from the `docker/` directory::
 
 ```bash
-ROLE="receiver" ./run_container_pointcloud.sh
+ROLE="receiver" ./run_scripts/run_container_pointcloud.sh
 ```
 
 ---
@@ -240,15 +254,6 @@ Verify with:
 ldd /opt/scream/bin/scream_receiver
 GST_DEBUG=3 /opt/scream/bin/scream_receiver 51000
 ```
-
----
-
-## Future Extensions
-
-- Additional compressors (custom quantizers)
-- Multi‑topic streaming
-- SCReAM feedback integration into Python
-- DDS‑aware congestion control
 
 ---
 
