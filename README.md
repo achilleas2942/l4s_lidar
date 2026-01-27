@@ -43,7 +43,7 @@ LiDAR messages
 |   └── manifests/
 |
 ├── docker/
-|   ├── build_scripts
+|   ├── build_scripts/
 │   |   ├── create_image_stable.sh          # Builder for the stable image
 │   |   ├── create_image_minimal.sh         # Builder for the minimal image
 │   |   └── create_image_pointcloud.sh      # Builder for the pointcloud image
