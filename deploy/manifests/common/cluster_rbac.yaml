@@ -13,7 +13,6 @@ kind: ClusterRoleBinding
 metadata:
   name: l4s-lidar-common-readonly-binding
 subjects:
-  # Add the ServiceAccounts from sender + receiver
   - kind: ServiceAccount
     name: l4s-lidar-sender
     namespace: l4s-lidar
@@ -21,6 +20,6 @@ subjects:
     name: l4s-lidar-receiver
     namespace: l4s-lidar
 roleRef:
+  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: l4s-lidar-common-readonly
-  apiGroup: rbac.authorization.k8s.io
