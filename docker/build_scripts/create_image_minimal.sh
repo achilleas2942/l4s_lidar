@@ -8,7 +8,7 @@ set -euo pipefail
 IMAGE_NAME="ghcr.io/achilleas2942/l4s-ros"
 IMAGE_TAG="minimal"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../dockerfiles" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # ROS distro: rolling | jazzy | humble | iron
 ROS_DISTRO="rolling"
