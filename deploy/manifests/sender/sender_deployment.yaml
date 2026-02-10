@@ -97,6 +97,5 @@ spec:
       volumes:
         - name: sender-scripts
           hostPath:
-            # This path will be replaced dynamically by run_k8s.sh
             path: "/replace/sender_scripts"
             type: DirectoryOrCreate
