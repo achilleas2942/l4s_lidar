@@ -7,4 +7,6 @@ metadata:
     app.kubernetes.io/name: l4s-lidar-sender
 data:
   LOG_LEVEL: "info"
-  RECEIVER_MODE: "standard"
+  DEFAULT_FRAME_RATE: "10"
+  DEFAULT_TOPIC: "/husky/ouster/points"
+  NOTE: "All runtime parameters may be overridden by run_k8s.sh"

@@ -15,34 +15,24 @@ spec:
       labels:
         app.kubernetes.io/name: l4s-lidar-sender
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: cpr-a200-0779
       serviceAccountName: l4s-lidar-sender
-      imagePullSecrets:
-        - name: gitlab-pull-secret
       containers:
         - name: l4s-lidar-sender
           image: ghcr.io/achilleas2942/l4s-ros:pointcloud
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
+          command: ["bash"]
+          args:
+            - "/opt/pointcloud/sender_scripts/sender.sh"
           tty: true
           stdin: true
           env:
-            # From global shared config
             - name: LOG_LEVEL
               valueFrom:
                 configMapKeyRef:
-                  name: l4s-global-config
-                  key: LOG_LEVEL
-            # Sender-specific config
-            - name: SENDER_MODE
-              valueFrom:
-                configMapKeyRef:
                   name: l4s-lidar-sender-config
-                  key: SENDER_MODE
+                  key: LOG_LEVEL
           ports:
-            - containerPort: 51000
-              protocol: TCP
-            # UDP ports 30000–30009
+            # UDP ports 30000-30009
             - containerPort: 30000
               protocol: UDP
             - containerPort: 30001
@@ -63,7 +53,7 @@ spec:
               protocol: UDP
             - containerPort: 30009
               protocol: UDP
-            # UDP ports 50000–50007
+            # UDP ports 50000-50007
             - containerPort: 50000
               protocol: UDP
             - containerPort: 50001
@@ -80,7 +70,7 @@ spec:
               protocol: UDP
             - containerPort: 50007
               protocol: UDP
-            # TCP stepping ports 30001–30009 (odd numbers)
+            # TCP odd ports 30001-30009
             - containerPort: 30001
               protocol: TCP
             - containerPort: 30003
@@ -91,7 +81,7 @@ spec:
               protocol: TCP
             - containerPort: 30009
               protocol: TCP
-            # TCP stepping ports 50001–50007 (odd numbers)
+            # TCP odd ports 50001-50007
             - containerPort: 50001
               protocol: TCP
             - containerPort: 50003
@@ -107,5 +97,6 @@ spec:
       volumes:
         - name: sender-scripts
           hostPath:
-            path: /src/sender_scripts
-            type: Directory
+            # This path will be replaced dynamically by run_k8s.sh
+            path: "/replace/sender_scripts"
+            type: DirectoryOrCreate

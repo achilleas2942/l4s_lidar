@@ -25,4 +25,3 @@ roleRef:
   kind: Role
   name: l4s-lidar-sender-role
   apiGroup: rbac.authorization.k8s.io
-  
