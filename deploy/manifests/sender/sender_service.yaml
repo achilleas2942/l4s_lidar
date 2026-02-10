@@ -41,7 +41,7 @@ spec:
     - name: udp-30009
       port: 30009
       protocol: UDP
-    # UDP ports 50000–50007
+    # UDP ports 50000–50007 and 51000
     - name: udp-50000
       port: 50000
       protocol: UDP
@@ -65,6 +65,9 @@ spec:
       protocol: UDP
     - name: udp-50007
       port: 50007
+      protocol: UDP
+    - name: udp-51000
+      port: 51000
       protocol: UDP
     # TCP odd ports 30001-30009
     - name: tcp-30001
