@@ -7,4 +7,6 @@ metadata:
     app.kubernetes.io/name: l4s-lidar-receiver
 data:
   LOG_LEVEL: "info"
-  RECEIVER_MODE: "standard"
+  DEFAULT_PORT: "30112"
+  DEFAULT_FRAME_ID: "husky/os_sensor"
+  NOTE: "All runtime parameters may be overridden dynamically by run_k8s.sh"

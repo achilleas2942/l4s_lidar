@@ -15,34 +15,24 @@ spec:
       labels:
         app.kubernetes.io/name: l4s-lidar-receiver
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: ki20erk3shusky2
       serviceAccountName: l4s-lidar-receiver
-      imagePullSecrets:
-        - name: gitlab-pull-secret
       containers:
         - name: l4s-lidar-receiver
           image: ghcr.io/achilleas2942/l4s-ros:pointcloud
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
+          command: ["bash"]
+          args:
+            - "/opt/pointcloud/receiver_scripts/receiver.sh"
           tty: true
           stdin: true
           env:
-            # From global shared config
             - name: LOG_LEVEL
               valueFrom:
                 configMapKeyRef:
-                  name: l4s-global-config
-                  key: LOG_LEVEL
-            # Receiver-specific config
-            - name: RECEIVER_MODE
-              valueFrom:
-                configMapKeyRef:
                   name: l4s-lidar-receiver-config
-                  key: RECEIVER_MODE
+                  key: LOG_LEVEL
           ports:
-            - containerPort: 51000
-              protocol: TCP
-            # UDP ports 30112–30119
+            # UPD ports 30112–30119
             - containerPort: 30112
               protocol: UDP
             - containerPort: 30113
@@ -87,5 +77,5 @@ spec:
       volumes:
         - name: receiver-scripts
           hostPath:
-            path: /src/receiver_scripts
-            type: Directory
+            path: "/replace/receiver_scripts"
+            type: DirectoryOrCreate

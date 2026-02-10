@@ -10,12 +10,7 @@ spec:
     app.kubernetes.io/name: l4s-lidar-receiver
   type: ClusterIP
   ports:
-    - name: tcp-51000
-      port: 51000
-      targetPort: 51000
-      protocol: TCP
-
-    # UDP 30112–30119
+    # UDP ports 30112–30119
     - name: udp-30112
       port: 30112
       protocol: UDP
@@ -40,8 +35,7 @@ spec:
     - name: udp-30119
       port: 30119
       protocol: UDP
-
-    # UDP 51000–51009
+    # UDP ports 51000–51009
     - name: udp-51000
       port: 51000
       protocol: UDP
