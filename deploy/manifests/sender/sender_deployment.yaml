@@ -21,8 +21,7 @@ spec:
           image: ghcr.io/achilleas2942/l4s-ros:pointcloud
           imagePullPolicy: Always
           command: ["bash"]
-          args:
-            - "/opt/pointcloud/sender_scripts/sender.sh"
+          args: ["/opt/pointcloud/sender_scripts/sender.sh"]
           tty: true
           stdin: true
           env:
@@ -31,6 +30,17 @@ spec:
                 configMapKeyRef:
                   name: l4s-lidar-sender-config
                   key: LOG_LEVEL
+            # Secret envs (values created by run_k8s.sh)
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: l4s-lidar-common-secret
+                  key: API_TOKEN
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: l4s-lidar-common-secret
+                  key: PASSWORD
           ports:
             # UDP ports 30000-30009
             - containerPort: 30000
@@ -98,6 +108,5 @@ spec:
               readOnly: true
       volumes:
         - name: sender-scripts
-          hostPath:
-            path: "/replace/sender_scripts"
-            type: DirectoryOrCreate
+          configMap:
+            name: l4s-lidar-sender-scripts
