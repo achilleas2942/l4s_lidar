@@ -21,8 +21,7 @@ spec:
           image: ghcr.io/achilleas2942/l4s-ros:pointcloud
           imagePullPolicy: Always
           command: ["bash"]
-          args:
-            - "/opt/pointcloud/receiver_scripts/receiver.sh"
+          args: ["/opt/pointcloud/receiver_scripts/receiver.sh"]
           tty: true
           stdin: true
           env:
@@ -31,8 +30,19 @@ spec:
                 configMapKeyRef:
                   name: l4s-lidar-receiver-config
                   key: LOG_LEVEL
+            # Secret envs (values created by run_k8s.sh)
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: l4s-lidar-common-secret
+                  key: API_TOKEN
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: l4s-lidar-common-secret
+                  key: PASSWORD
           ports:
-            # UPD ports 30112–30119
+            # UDP ports 30112–30119
             - containerPort: 30112
               protocol: UDP
             - containerPort: 30113
@@ -76,6 +86,5 @@ spec:
               readOnly: true
       volumes:
         - name: receiver-scripts
-          hostPath:
-            path: "/replace/receiver_scripts"
-            type: DirectoryOrCreate
+          configMap:
+            name: l4s-lidar-receiver-scripts
