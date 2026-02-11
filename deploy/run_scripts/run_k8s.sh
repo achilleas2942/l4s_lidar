@@ -120,7 +120,7 @@ set_env_for() {
 }
 
 ensure_namespace() {
-  kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
+  kubectl apply -f "$COMMON_DIR/namespace.yaml"
 }
 
 ensure_secret() {
@@ -280,7 +280,7 @@ Usage:
   ./run_k8s.sh restart
   ./run_k8s.sh logs
   ./run_k8s.sh tmux
-  ./run_k8s.sh destroy_all
+  ./run_k8s.sh delete
 
 Environment (selected):
   # Required for 'deploy'
@@ -315,7 +315,7 @@ case "$ACTION" in
   restart)      restart_all ;;
   logs)         logs_all ;;
   tmux)         tmux_mode ;;
-  destroy_all)  destroy_all ;;
+  delete)       destroy_all ;;
   -h|--help|help) usage ;;
   *) echo "Unknown action: $ACTION"; usage; exit 1 ;;
 esac
