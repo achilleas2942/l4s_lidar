@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: l4s-lidar
-  labels:
-    app.kubernetes.io/part-of: l4s-lidar-system
