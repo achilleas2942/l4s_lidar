@@ -35,15 +35,6 @@ LiDAR messages
 
 ```
 .
-├── deploy/ (TO BE DONE)
-│   ├── helm/
-│   │
-│   ├── kustomize/
-│   │
-│   ├── manifests/
-│   │
-│   └── README.md
-│
 ├── docker/
 │   ├── build_scripts/
 │   │   ├── create_image_stable.sh          # Builder for the stable image
