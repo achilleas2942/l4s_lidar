@@ -1,6 +1,6 @@
-# SCReAM + ROS 2 LiDAR PointCloud Streaming
+# L4S LiDAR – SCReAM & ROS 2 LiDAR PointCloud Streaming
 
-This repository provides a **containerized, modular, real‑time pipeline** for streaming **ROS 2 LiDAR PointCloud2 messages** over the network using **SCReAM (Self‑Clocked Rate Adaptation for Multimedia)** with **L4S‑friendly congestion control** and **Draco compression**.
+This repository provides a **containerized, modular, real‑time pipeline** for streaming **ROS 2 LiDAR PointCloud2 messages** over the network using **SCReAM (Self‑Clocked Rate Adaptation for Multimedia)** with **L4S‑friendly congestion control** and **Draco compression**.
 
 The design is inspired by and builds upon the SCReAM multicam examples, but is **cleanly separated**, **ROS‑native**, and optimized for **real‑time point cloud transmission**.
 
@@ -10,245 +10,159 @@ The design is inspired by and builds upon the SCReAM multicam examples, but is *
 
 ```
 LiDAR Sensor
-   ↓  (ROS2 PointCloud2)
-pointcloud_sender.py
-   ↓  (Draco compression)
-RTP packets
-   ↓
+   ↓  (ROS 2 PointCloud2)
+pointcloud_sender.py + Draco compression
+   ↓  (RTP packets)
 SCReAM sender
    ↓  (UDP / L4S)
-================ NETWORK ================
-   ↓
+======================= NETWORK =======================
+   ↓  (UDP / L4S)
 SCReAM receiver
-   ↓  (RTP reassembly)
-RTP packets
-   ↓
-pointcloud_receiver.py
-   ↓  (Draco decompression)
-LiDAR messages
-   ↓  (ROS2 PointCloud2)
+   ↓  (RTP packets)
+pointcloud_receiver.py + Draco decompression
+   ↓  (ROS 2 PointCloud2)
 ```
 
 ---
 
-## Repository Structure
+## Repository Layout
 
 ```
-.
+./
 ├── docker/
-│   ├── build_scripts/
-│   │   ├── create_image_stable.sh          # Builder for the stable image
-│   │   ├── create_image_minimal.sh         # Builder for the minimal image
-│   │   └── create_image_pointcloud.sh      # Builder for the pointcloud image
-│   │
-│   ├── dockerfiles/
-│   │   ├── Dockerfile.stable               # Full SCReAM + GStreamer runtime
-│   │   ├── Dockerfile.minimal              # Minimal SCReAM runtime (base image)
-│   │   └── Dockerfile.pointcloud           # PointCloud image on top of minimal
-│   │
-│   ├── entrypoints/
-│   │   ├── entrypoint_stable.sh
-│   │   ├── entrypoint_minimal.sh
-│   │   └── entrypoint_pointcloud.sh
-│   │
-│   ├── run_scripts/
-│   │   └── run_container_pointcloud.sh     # Unified container launcher
-│   │
+│   ├── build_scripts/                                     # Image build scripts
+│   ├── dockerfiles/                                       # Dockerfiles for all image variants
+│   ├── entrypoints/                                       # Container entrypoint scripts
+│   ├── run_scripts/                                       # Container launcher scripts
 │   └── README.md
 │
 ├── src/
 │   ├── sender_scripts/
-│   │   ├── sender.sh                       # tmux‑based sender launcher
-│   │   ├── scream_sender.sh                # Native SCReAM sender wrapper
-│   │   ├── pointcloud_sender.py            # ROS2 → Draco → RTP
-│   │   ├── pointcloud_sender.sh            # Runs pointcloud_sender.py
-│   │   └── compressors/
-│   │       └── draco_compressor.py
+│   │   ├── sender.sh                                      # tmux‑based sender launcher
+│   │   ├── scream_sender.sh                               # Native SCReAM sender wrapper
+│   │   ├── pointcloud_sender.py                           # ROS 2 → Draco → RTP
+│   │   ├── pointcloud_sender.sh                           # Runs pointcloud_sender.py
+│   │   ├── compressors/
+│   │   │   └── draco_compressor.py                        # Pointcloud compression with Draco
+│   │   └── helpers/
+│   │       ├── compression2bitrate_model.pkl              # Regression model: maps compression params to bitrate
+│   │       └── target_bitrate.py                          # Target bitrate bridge from SCReAM
 │   │
 │   └── receiver_scripts/
-│       ├── receiver.sh                     # tmux‑based receiver launcher
-│       ├── scream_receiver.sh              # Native SCReAM receiver wrapper
-│       ├── pointcloud_receiver.py          # RTP → Draco → ROS2
-│       ├── pointcloud_receiver.sh          # Runs pointcloud_receiver.py
+│       ├── receiver.sh                                    # tmux‑based receiver launcher
+│       ├── scream_receiver.sh                             # Native SCReAM receiver wrapper
+│       ├── pointcloud_receiver.py                         # RTP → Draco → ROS 2
+│       ├── pointcloud_receiver.sh                         # Runs pointcloud_receiver.py
 │       └── decompressors/
-│           └── draco_decompressor.py
-│   
+│           └── draco_decompressor.py                      # Pointcloud decompression with Draco
+│
 └── README.md
 ```
 
 ---
 
-## Docker Images Overview
+## Docker Images
 
-### 1. **stable** image
-**Purpose:**
-- Builds SCReAM completely from source
-- Includes GStreamer plugins, SCReAM sender/receiver binaries
+| Image             | Purpose                                                     | Base                   |
+|-------------------|-------------------------------------------------------------|------------------------|
+| `minimal`         | SCReAM sender/receiver binaries + GStreamer plugins         | `ros:rolling-ros-base` |
+| `pointcloud`      | ROS 2 PointCloud streaming with Draco compression           | `minimal`              |
+| `pointcloud_demo` | Demo with a recorded dataset included                       | `pointcloud`           |
+| `stable`          | Full SCReAM build with all GStreamer plugins (legacy/debug) | `ros:rolling-ros-base` |
 
-**Used for:**
-- Development
-- Debugging
-- Reference runtime
+> **Note:** To run `pointcloud`, only the `minimal` base image needs to be built first.
 
----
-
-### 2. **minimal** image
-**Purpose:**
-- Minimal runtime for SCReAM
-- No ROS‑specific dependencies
-- Small footprint
-
-**Contains:**
-- `scream_sender`
-- `scream_receiver`
-- `gstscream` plugins
-
-This image is the **base** for pointcloud streaming.
-
----
-
-### 3. **pointcloud** image
-**Purpose:**
-- ROS 2 PointCloud streaming
-- Draco compression
-- tmux‑based orchestration
-
-**Adds on top of minimal:**
-- ROS 2 message types (`sensor_msgs`, `rclpy`)
-- Python dependencies (`numpy`, `DracoPy`)
-- tmux
-
----
-
-## Build Images
-
-From the `docker/` directory:
+### Build (from `./docker/`)
 
 ```bash
-./build_scripts/create_image_stable.sh
 ./build_scripts/create_image_minimal.sh
 ./build_scripts/create_image_pointcloud.sh
 ```
 
----
-
-## Running Containers (Mote details on how to run the containers [here](./docker/README.md))
-
-### `run_container_pointcloud.sh`
-A **single entry point** to run sender or receiver containers.
-
-Key features:
-- Role‑based execution (`sender` or `receiver`)
-- Volume‑mounted scripts (no rebuild needed for logic changes)
-
-Run the following bash script on the sender from the `docker/` directory:
+### Pull (pre-built)
 
 ```bash
-ROLE="sender" ./run_scripts/run_container_pointcloud.sh
-```
-
-Run the following bash script on the receiver  from the `docker/` directory::
-
-```bash
-ROLE="receiver" ./run_scripts/run_container_pointcloud.sh
+docker pull ghcr.io/achilleas2942/l4s-ros:minimal
+docker pull ghcr.io/achilleas2942/l4s-ros:pointcloud
 ```
 
 ---
 
-## Sender Side
+## Quick Start (Docker)
 
-### sender.sh (tmux launcher)
-Starts a tmux session with multiple panes, typically:
+### Docker - read more [docker/README.md](./docker/README.md)
 
-- SCReAM sender
-- pointcloud_sender.py
-- Optional monitoring panes
+From the `./docker/` directory:
 
-### scream_sender.sh
-Wrapper for the native SCReAM sender binary.
+```bash
+# Terminal 1 — Receiver
+ROLE=receiver ./run_scripts/run_container_pointcloud.sh
 
-Responsibilities:
-- Configure SCReAM rate control
-- Launch `scream_sender`
+# Terminal 2 — Sender
+ROLE=sender ./run_scripts/run_container_pointcloud.sh
+```
 
-### pointcloud_sender.py
-ROS 2 node that:
-- Subscribes to `PointCloud2`
-- Compresses frames (Draco)
-- Sends compressed frames via RTP
+For different machines, use host networking:
 
-Key properties:
-- Multithreaded compression
-- Backpressure via bounded queues
-- Frame dropping instead of blocking (real‑time safe)
+```bash
+# On the receiver machine
+ROLE=receiver USE_HOST_NETWORK=1 SENDER_HOST=<SENDER_IP> ./run_scripts/run_container_pointcloud.sh
+
+# On the sender machine
+ROLE=sender USE_HOST_NETWORK=1 RECEIVER_HOST=<RECEIVER_IP> ./run_scripts/run_container_pointcloud.sh
+```
 
 ---
 
-## Receiver Side
+## How It Works
 
-### receiver.sh (tmux launcher)
-Creates a tmux session with:
+### Sender Pipeline
 
-- SCReAM receiver
-- pointcloud_receiver.py
-- Optional monitoring panes
+1. `sender.sh` starts a tmux session with multiple panes
+2. `scream_sender.sh` launches the native SCReAM sender binary for congestion control
+3. `target_bitrate.py` reads the SCReAM target bitrate via UDP and publishes it as a ROS 2 topic (`/desired_bps`)
+4. `pointcloud_sender.py` subscribes to a `PointCloud2` topic, compresses frames with Draco, and sends them as RTP packets
 
-### scream_receiver.sh
-Wrapper for the native SCReAM receiver binary.
+The sender uses **adaptive quality selection**: a regression model predicts the output bitrate for each combination of quantization bits and compression level. The sender picks the highest quality that fits within both the SCReAM bitrate target.
 
-### pointcloud_receiver.py
-ROS 2 node that:
-- Receives RTP packets
-- Reassembles frames
-- Decompresses Draco payloads
-- Publishes `PointCloud2`
+### Receiver Pipeline
 
-Designed for:
-- Packet loss tolerance
-- Frame‑level isolation
-- Real‑time publication
+1. `receiver.sh` starts a tmux session with multiple panes
+2. `scream_receiver.sh` launches the native SCReAM receiver binary
+3. `pointcloud_receiver.py` receives RTP packets, reassembles frames, decompresses Draco payloads, and publishes `PointCloud2`
 
 ---
 
-## Compression / Decompression
+## Compression
 
-### Draco
-Currently supported compressor.
+### Draco (default)
 
-- `compressors/draco_compressor.py`
-- `decompressors/draco_decompressor.py`
+- Sender: `compressors/draco_compressor.py`
+- Receiver: `decompressors/draco_decompressor.py`
 
-The architecture is **pluggable**:
-- Additional compressors can be added later
-- Selection via Python imports
+The architecture is **pluggable** — additional compressors can be added by implementing the same interface and selecting them via the `COMP_MODULE` / `COMP_CLASS` environment variables.
 
 ---
 
-## Real‑Time Design Principles
+## Customization
 
-- No blocking in ROS callbacks
-- Bounded queues (drop instead of stall)
-- Separate threads for:
-  - ROS
-  - Compression
-  - Networking
-- tmux for visibility and debugging
+To use your own sender/receiver logic:
+
+1. Add your code to `./src/sender_scripts/` and `./src/receiver_scripts/`
+2. Edit `sender.sh` and `receiver.sh` to launch your scripts
+
+Scripts are volume-mounted (Docker), so no image rebuild is needed for logic changes.
 
 ---
 
 ## Common Issues & Debugging
 
-### SCReAM receiver segfaults
-Usually caused by:
-- Missing runtime libraries
-- Incorrect `GST_PLUGIN_PATH`
-- Debug/release mismatch
-
-Verify with:
-```bash
-ldd /opt/scream/bin/scream_receiver
-GST_DEBUG=3 /opt/scream/bin/scream_receiver 51000
-```
+| Issue                                  | Likely cause                                            | Fix                                                               |
+|----------------------------------------|---------------------------------------------------------|-------------------------------------------------------------------|
+| SCReAM receiver segfaults              | Missing runtime libraries or `GST_PLUGIN_PATH` mismatch | `ldd /opt/scream/bin/scream_receiver` and check `GST_PLUGIN_PATH` |
+| No packets received                    | Wrong IP/hostname                                       | Verify `RECEIVER_HOST` / `SENDER_HOST`                            |
+| Empty point clouds                     | NaN/Inf values in input                                 | Sender filters these automatically; check source data             |
+| Frames dropped on sender               | Encoding + transmission exceeds frame period            | Reduce `QUANT_BITS` or increase `RATE_MAX`                        |
 
 ---
 
@@ -256,8 +170,17 @@ GST_DEBUG=3 /opt/scream/bin/scream_receiver 51000
 
 - SCReAM: Ericsson Research
 - GStreamer
-- ROS 2
+- ROS 2
 - Draco: Google
 
-This repository adapts and extends SCReAM multicam examples for **ROS 2 LiDAR streaming**.
+> This repository adapts and extends SCReAM multicam examples for **ROS 2 LiDAR streaming**.
 
+---
+
+## Cite Real-time Point Cloud Data Transmission via L4S for 5G-Edge-Assisted Robotics:
+
+```
+[1] Damigos, G., Seisa, A.S., Stathoulopoulos, N., Sandberg, S. and Nikolakopoulos, G.,
+2025. Real-time Point Cloud Data Transmission via L4S for 5G-Edge-Assisted Robotics.
+arXiv preprint arXiv:2511.15677.
+```
