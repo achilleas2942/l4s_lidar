@@ -81,7 +81,6 @@ pointcloud_receiver.py + Draco decompression
 |-------------------|-------------------------------------------------------------|------------------------|
 | `minimal`         | SCReAM sender/receiver binaries + GStreamer plugins         | `ros:rolling-ros-base` |
 | `pointcloud`      | ROS 2 PointCloud streaming with Draco compression           | `minimal`              |
-| `pointcloud_demo` | Demo with a recorded dataset included                       | `pointcloud`           |
 | `stable`          | Full SCReAM build with all GStreamer plugins (legacy/debug) | `ros:rolling-ros-base` |
 
 > **Note:** To run `pointcloud`, only the `minimal` base image needs to be built first.
