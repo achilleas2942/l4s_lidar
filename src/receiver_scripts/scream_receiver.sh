@@ -8,10 +8,10 @@ set -euo pipefail
 SCREAM_TARGET_DIR="/opt/scream/bin"
 
 # Use environment variables from run_container.sh
-if [ "${USE_HOST_NETWORK:-0}" = "1" ]; then
-  SENDER_IP="${SENDER_HOST}"
+if ["USE_HOST_NETWORK"="${USE_HOST_NETWORK:-1}"]; then
+  SENDER_IP="${SENDER_HOST:-127.0.0.1}"
 else
-  SENDER_IP="$(getent hosts "${SENDER_HOST}" | awk '{print $1}')"  # sender container hostname/IP
+  SENDER_IP="$(getent hosts "${SENDER_HOST:-127.0.0.1}" | awk '{print $1}')"  # sender container hostname/IP
 fi
 
 RTP_PORT="${SENDER_PORT:-51000}"                                              # sender RTP port
