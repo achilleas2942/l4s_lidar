@@ -113,7 +113,7 @@ class PointCloudSender(Node):
 
         self.poly, self.lr = joblib.load(model_path)
 
-        self._quant_bits_list = np.array([8,9,10,11,12,13,14,15,16,17,18,19,20])
+        self._quant_bits_list = np.array([8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24])
         self._comp_levels_list = np.array([0,1,2,3,4,5,6,7,8,9])
 
         self._grid = np.array([
