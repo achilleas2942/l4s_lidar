@@ -44,7 +44,7 @@ class DracoCompression:
         q_range = float((maxs - mins).max())
         q_origin = mins.tolist()
 
-        t0 = time.time()
+        t0 = time.perf_counter()
         compressed = encode(
             points=points,
             faces=None,
@@ -55,5 +55,5 @@ class DracoCompression:
             preserve_order=True,
             create_metadata=False
         )
-        elapsed_ms = (time.time() - t0) * 1e3
+        elapsed_ms = (time.perf_counter() - t0) * 1e3
         return compressed, elapsed_ms
