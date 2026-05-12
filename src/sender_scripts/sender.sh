@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SESSION="ros_scream_sender_session"
+SESSION="sender"
 
 # Source ROS and SCReAM environment
 ROS_SETUP="/opt/ros/${ROS_DISTRO}/setup.bash"
+ROS_ENV="export ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
 
 # -----------------------------
 # Start tmux session
@@ -17,19 +18,19 @@ tmux new-session -d -s "$SESSION"
 tmux send-keys -t "$SESSION:0.0" "bash /opt/pointcloud/sender_scripts/scream_sender.sh" C-m
 
 # -----------------------------
-# Pane 1: PointCloud Python sender
+# Pane 1: Pointcloud Python sender
 # -----------------------------
 tmux split-window -h -t "$SESSION:0"
-tmux send-keys -t "$SESSION:0.1" "bash /opt/pointcloud/sender_scripts/pointcloud_sender.sh" C-m
+tmux send-keys -t "$SESSION:0.1" "source ${ROS_SETUP} && ${ROS_ENV} && python3 /opt/pointcloud/sender_scripts/helpers/target_bitrate.py" C-m
 
 # -----------------------------
 # Optional monitoring panes (can be used later)
 # -----------------------------
 tmux split-window -v -t "$SESSION:0.1"
-tmux send-keys -t "$SESSION:0.2" "source /opt/ros/rolling/setup.bash && ros2 bag play -l /opt/pointcloud/sender_scripts/rosbag2_2025_06_27-12_05_56_0.db3" C-m
+tmux send-keys -t "$SESSION:0.2" "source ${ROS_SETUP} && ${ROS_ENV} && bash /opt/pointcloud/sender_scripts/pointcloud_sender.sh" C-m
 
 tmux split-window -v -t "$SESSION:0.2"
-tmux send-keys -t "$SESSION:0.3" "source /opt/ros/rolling/setup.bash" C-m
+tmux send-keys -t "$SESSION:0.3" "source ${ROS_SETUP} && ${ROS_ENV}" C-m
 
 # -----------------------------
 # Layout & attach
