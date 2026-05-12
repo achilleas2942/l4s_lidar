@@ -30,10 +30,24 @@ pointcloud_receiver.py + Draco decompression
 ```
 ./
 ├── docker/
-│   ├── build_scripts/                                     # Image build scripts
-│   ├── dockerfiles/                                       # Dockerfiles for all image variants
-│   ├── entrypoints/                                       # Container entrypoint scripts
-│   ├── run_scripts/                                       # Container launcher scripts
+│   ├── build_scripts/
+│   │   ├── create_image_stable.sh             # Builder for the stable image
+│   │   ├── create_image_minimal.sh            # Builder for the minimal image
+│   │   └── create_image_pointcloud.sh         # Builder for the pointcloud image
+│   │
+│   ├── dockerfiles/
+│   │   ├── Dockerfile.stable                  # Full SCReAM + GStreamer runtime
+│   │   ├── Dockerfile.minimal                 # Minimal SCReAM runtime (base image)
+│   │   └── Dockerfile.pointcloud              # PointCloud image on top of minimal
+│   │
+│   ├── entrypoints/
+│   │   ├── entrypoint_stable.sh               # Entrypoint for the stable image
+│   │   ├── entrypoint_minimal.sh              # Entrypoint for the minimal image
+│   │   └── entrypoint_pointcloud.sh           # Entrypoint for the pointcloud image
+│   │
+│   ├── run_scripts/
+│   │   └── run_container_pointcloud.sh         # Unified container launcher
+│   │
 │   └── README.md
 │
 ├── src/
