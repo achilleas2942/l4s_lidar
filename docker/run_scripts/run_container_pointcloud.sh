@@ -19,9 +19,8 @@ DETACH=0                                                    # 1 = detached, 0 = 
 ENABLE_NET_ADMIN=1
 USE_DOCKER_NETWORK="${USE_DOCKER_NETWORK:-1}"               # 1 for same-host multi-container
 USE_HOST_NETWORK="${USE_HOST_NETWORK:-0}"                   # 1 for different hosts
-RECEIVER_HOST_IP="${RECEIVER_HOST_IP:-127.0.0.1}"           # [IMPORTANT!] Set the receiver host IP for sender
-SENDER_HOST_IP="${SENDER_HOST_IP:-127.0.0.1}"               # [IMPORTANT!] Set the sender host IP for receiver
-export USE_HOST_NETWORK
+RECEIVER_HOST="${RECEIVER_HOST:-127.0.0.1}"                 # [IMPORTANT!] Set the receiver host IP for sender
+SENDER_HOST="${SENDER_HOST:-127.0.0.1}"                     # [IMPORTANT!] Set the sender host IP for receiver
 
 # Environment
 PRINT_ENV=1
@@ -45,6 +44,8 @@ MAX_TOTAL_RATE="${MAX_TOTAL_RATE:-60000}"                   # kbps
 PACING_HEADROOM="${PACING_HEADROOM:-1.5}"                   # pacing headroom
 SENDPIPELINE="${SENDPIPELINE:-1}"                           # SCReAM send pipeline index
 LOCAL_RTCP_PORT="${LOCAL_RTCP_PORT:-51000}"                 # receiver local RTCP port
+RECEIVER_PORT="${RECEIVER_PORT:-51000}"                     # receiver SCReAM RTP port
+SENDER_PORT="${SENDER_PORT:-51000}"                         # sender SCReAM RTP port
 
 # POINTCLOUD sender / receiver parameters
 QUEUE_SIZE="${QUEUE_SIZE:-4}"                               # sender queue size
@@ -60,7 +61,7 @@ QUANT_BITS="${QUANT_BITS:-12}"                              # sender quantizatio
 COMP_LEVEL="${COMP_LEVEL:-3}"                               # sender compression level
 WORKERS="${WORKERS:-1}"                                     # sender worker threads
 PORT="${PORT:-30112}"                                       # receiver listening port
-OUTPUT_TOPIC="${OUTPUT_TOPIC:-pointcloud_rx}"               # receiver output topic
+OUTPUT_TOPIC="${OUTPUT_TOPIC:-/pointcloud_rx}"              # receiver output topic
 FRAME_ID="${FRAME_ID:-husky/os_sensor}"                     # receiver frame ID
 
 # =====================================
@@ -100,11 +101,9 @@ if [ "${USE_HOST_NETWORK}" = "1" ]; then
   DOCKER_ARGS+=("--network=host")
   echo "Using host networking (multi-host)"
   if [ "${ROLE}" = "sender" ]; then
-    export RECEIVER_HOST="${RECEIVER_HOST_IP}"
-    export RECEIVER_PORT=51000
+    export RECEIVER_HOST="${RECEIVER_HOST}"
   else
-    export SENDER_HOST="${SENDER_HOST_IP}"
-    export SENDER_PORT=51000
+    export SENDER_HOST="${SENDER_HOST}"
   fi
 elif [ "${USE_DOCKER_NETWORK}" = "1" ]; then
   DOCKER_NETWORK="scream_net"
@@ -115,11 +114,9 @@ elif [ "${USE_DOCKER_NETWORK}" = "1" ]; then
 
   # Set container hostnames for SCReAM communication
   if [ "${ROLE}" = "sender" ]; then
-    export RECEIVER_HOST="l4s-ros-pointcloud-receiver"
-    export RECEIVER_PORT=51000
+    export RECEIVER_HOST="l4s-ros-${IMAGE_TAG}-receiver"
   else
-    export SENDER_HOST="l4s-ros-pointcloud-sender"
-    export SENDER_PORT=51000
+    export SENDER_HOST="l4s-ros-${IMAGE_TAG}-sender"
   fi
 fi
 
@@ -128,102 +125,117 @@ fi
 # -----------------
 [ "${ENABLE_NET_ADMIN}" = "1" ] && DOCKER_ARGS+=("--cap-add=NET_ADMIN")
 
-# -----------------
-# Environment
-# -----------------
-DOCKER_ARGS+=(
-  "-e" "PRINT_ENV=${PRINT_ENV}"
-  "-e" "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
-  "-e" "RECEIVER_HOST=${RECEIVER_HOST:-127.0.0.1}"
-  "-e" "RECEIVER_PORT=${RECEIVER_PORT:-51000}"
-  "-e" "SENDER_HOST=${SENDER_HOST:-127.0.0.1}"
-  "-e" "SENDER_PORT=${SENDER_PORT:-51000}"
-)
-
-# -----------------
-# Expose SCReAM ports
-# -----------------
-# SCReAM uses multiple UDP/TCP ports internally for RTP, RTCP, and codec control
 if [ "${ROLE}" = "sender" ]; then
-    # Map all typical sender ports
-    for port in {30000..30009} {50000..50007}; do
-        DOCKER_ARGS+=("-p" "${port}:${port}/udp")
-    done
-    for port in {30001..30009..2} {50001..50007..2}; do
-        DOCKER_ARGS+=("-p" "${port}:${port}/tcp")
-    done
-else
-    # Map all typical receiver ports
-    for port in {51000..51009} {30112..30119}; do
-        DOCKER_ARGS+=("-p" "${port}:${port}/udp")
-    done
-fi
-
-# -----------------
-# Role-based scripts
-# -----------------
-if [ "${ROLE}" = "sender" ]; then
+  # -----------------
+  # Expose SCReAM ports
+  # -----------------
+  # SCReAM uses multiple UDP/TCP ports internally for RTP, RTCP, and codec control
+  # Map all typical sender ports
+  for port in {30000..30009} {50000..50007}; do
+      DOCKER_ARGS+=("-p" "${port}:${port}/udp")
+  done
+  for port in {30001..30009..2} {50001..50007..2}; do
+      DOCKER_ARGS+=("-p" "${port}:${port}/tcp")
+  done
+  # -----------------
+  # Environment
+  # -----------------
+  DOCKER_ARGS+=(
+    "-e" "PRINT_ENV=${PRINT_ENV}"
+    "-e" "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
+    "-e" "RECEIVER_HOST=${RECEIVER_HOST:-127.0.0.1}"
+    "-e" "USE_HOST_NETWORK=${USE_HOST_NETWORK}"
+  )
+  # -----------------
+  # Role-based scripts
+  # -----------------
   if [ ! -d "${HOST_SENDER_SCRIPTS}" ]; then
     echo "❌ sender_scripts directory not found: ${HOST_SENDER_SCRIPTS}"
     exit 1
   fi
-
   DOCKER_ARGS+=(
     "-v" "${HOST_SENDER_SCRIPTS}:${CONTAINER_SCRIPT_ROOT}/sender_scripts:ro"
   )
-
   ENTRYPOINT_CMD=(
     "bash"
     "${CONTAINER_SCRIPT_ROOT}/sender_scripts/sender.sh"
   )
-
-  # Export SCReAM sender parameters
-  export DELAY_TARGET
-  export RATE_MIN
-  export RATE_INIT
-  export RATE_MAX
-  export RATE_SCALE
-  export MAX_TOTAL_RATE
-  export PACING_HEADROOM
-  export SENDPIPELINE
-
-  # Export POINTCLOUD sender parameters
-  export TOPIC
-  export DST_IP
-  export DST_PORT
-  export COMP_MODULE
-  export COMP_CLASS
-  export QUANT_BITS
-  export COMP_LEVEL
-  export WORKERS
-  export QUEUE_SIZE
-  export MAX_PAYLOAD
-  export RTP_CLOCK
-  export FRAME_RATE
-
+  # -----------------
+  # SCReAM parameters
+  # -----------------
+  DOCKER_ARGS+=(
+    "-e" "DELAY_TARGET=${DELAY_TARGET}"
+    "-e" "RATE_MIN=${RATE_MIN}"
+    "-e" "RATE_INIT=${RATE_INIT}"
+    "-e" "RATE_MAX=${RATE_MAX}"
+    "-e" "RATE_SCALE=${RATE_SCALE}"
+    "-e" "MAX_TOTAL_RATE=${MAX_TOTAL_RATE}"
+    "-e" "PACING_HEADROOM=${PACING_HEADROOM}"
+    "-e" "SENDPIPELINE=${SENDPIPELINE}"
+    "-e" "RECEIVER_PORT=${RECEIVER_PORT:-51000}"
+  )
+  # -----------------
+  # Pointcloud parameters
+  # -----------------
+  DOCKER_ARGS+=(
+    "-e" "TOPIC=${TOPIC}"
+    "-e" "DST_IP=${DST_IP}"
+    "-e" "DST_PORT=${DST_PORT}"
+    "-e" "COMP_MODULE=${COMP_MODULE}"
+    "-e" "COMP_CLASS=${COMP_CLASS}"
+    "-e" "QUANT_BITS=${QUANT_BITS}"
+    "-e" "COMP_LEVEL=${COMP_LEVEL}"
+    "-e" "WORKERS=${WORKERS}"
+    "-e" "QUEUE_SIZE=${QUEUE_SIZE}"
+    "-e" "MAX_PAYLOAD=${MAX_PAYLOAD}"
+    "-e" "RTP_CLOCK=${RTP_CLOCK}"
+    "-e" "FRAME_RATE=${FRAME_RATE}"
+  )
 else
+  # -----------------
+  # Expose SCReAM ports
+  # -----------------
+  # Map all typical receiver ports
+  for port in {51000..51009} {30112..30119}; do
+      DOCKER_ARGS+=("-p" "${port}:${port}/udp")
+  done
+  # -----------------
+  # Environment
+  # -----------------
+  DOCKER_ARGS+=(
+    "-e" "PRINT_ENV=${PRINT_ENV}"
+    "-e" "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
+    "-e" "SENDER_HOST=${SENDER_HOST:-127.0.0.1}"
+    "-e" "USE_HOST_NETWORK=${USE_HOST_NETWORK}"
+  )
+  # -----------------
+  # Role-based scripts
+  # -----------------
   if [ ! -d "${HOST_RECEIVER_SCRIPTS}" ]; then
     echo "❌ receiver_scripts directory not found: ${HOST_RECEIVER_SCRIPTS}"
     exit 1
   fi
-
   DOCKER_ARGS+=(
     "-v" "${HOST_RECEIVER_SCRIPTS}:${CONTAINER_SCRIPT_ROOT}/receiver_scripts:ro"
   )
-
   ENTRYPOINT_CMD=(
     "bash"
     "${CONTAINER_SCRIPT_ROOT}/receiver_scripts/receiver.sh"
   )
-
-  # Export SCReAM receiver parameters
-  export LOCAL_RTCP_PORT
-
-  # Export POINTCLOUD receiver parameters
-  export PORT
-  export OUTPUT_TOPIC
-  export FRAME_ID
-
+  # -----------------
+  # SCReAM parameters
+  # -----------------
+  DOCKER_ARGS+=(
+    "-e" "LOCAL_RTCP_PORT=${LOCAL_RTCP_PORT:-51000}"
+    "-e" "SENDER_PORT=${SENDER_PORT:-51000}"
+  )
+  # Pointcloud parameters
+  # -----------------
+  DOCKER_ARGS+=(
+    "-e" "PORT=${PORT}"
+    "-e" "OUTPUT_TOPIC=${OUTPUT_TOPIC}"
+    "-e" "FRAME_ID=${FRAME_ID}"
+  )
 fi
 
 # -----------------
