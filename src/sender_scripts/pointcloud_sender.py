@@ -125,8 +125,14 @@ class PointCloudSender(Node):
         Xg = self.poly.transform(grid3)
         self._pred_bps = self.lr.predict(Xg)
 
-        self.desired_bps = float(np.mean(self._pred_bps))
+        # Use predicted bitrate for the actual initial compression params
+        init_idx = np.abs(self._grid - [args.quant_bits, args.comp_level]).sum(axis=1).argmin()
+        self.desired_bps = float(self._pred_bps[init_idx])
         self.rtp_sender.desired_bps = self.desired_bps
+
+        self._frame_period = 1.0 / args.frame_rate
+        self._enc_time_ema = 0.01
+        self._ema_alpha = 0.3
 
         # ---------------- ROS subscriptions ---------------
         self.create_subscription(Float32, "/desired_bps", self._on_bitrate, 10)
@@ -137,13 +143,27 @@ class PointCloudSender(Node):
     def _on_bitrate(self, msg: Float32):
         raw = float(msg.data)
         self.desired_bps = float(np.clip(raw, 1e6, 20e6))
-        idx = np.abs(self._pred_bps - self.desired_bps).argmin()
+
+        # Max payload bits that can be transmitted in the remaining frame budget
+        send_budget_s = max(0.01, self._frame_period * 0.95 - self._enc_time_ema)
+        max_payload_bps = (send_budget_s * self.desired_bps) * self.rtp_sender.frame_rate
+
+        effective_cap = min(self.desired_bps, max_payload_bps)
+
+        mask = self._pred_bps <= effective_cap
+        if mask.any():
+            candidates = np.where(mask)[0]
+            idx = candidates[self._pred_bps[candidates].argmax()]
+        else:
+            idx = self._pred_bps.argmin()
+
         q, c = self._grid[idx]
         self.compressor.quant_bits = int(q)
         self.compressor.comp_level = int(c)
         self.rtp_sender.desired_bps = self.desired_bps
         self.get_logger().info(
-            f"Bitrate target={self.desired_bps:.0f} → q={q}, c={c}"
+            f"Bitrate target={self.desired_bps:.0f} → q={q}, c={c} "
+            f"(enc_ema={self._enc_time_ema*1000:.1f}ms, send_budget={send_budget_s*1000:.1f}ms)"
         )
 
     def _on_pointcloud(self, msg: PointCloud2):
@@ -175,6 +195,22 @@ class PointCloudSender(Node):
             payload, enc_ms = future.result()
             if not payload:
                 return
+
+            enc_s = enc_ms / 1000.0
+            self._enc_time_ema = (self._ema_alpha * enc_s +
+                                (1 - self._ema_alpha) * self._enc_time_ema)
+
+            send_s = (len(payload) * 8) / max(1, self.rtp_sender.desired_bps)
+            total_s = enc_s + send_s
+            budget = self._frame_period * 0.95
+
+            if total_s > budget:
+                self.get_logger().warning(
+                    f"Frame overbudget: enc={enc_ms:.1f}ms + send={send_s*1000:.1f}ms "
+                    f"= {total_s*1000:.1f}ms > {budget*1000:.1f}ms, dropping"
+                )
+                return
+
             self.send_queue.put_nowait(payload)
             self.get_logger().info(
                 f"Sent {len(payload)*8*10**-6:.2f} Mbit (enc {enc_ms:.1f} ms)"
